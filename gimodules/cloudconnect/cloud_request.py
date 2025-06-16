@@ -1819,7 +1819,7 @@ class CloudRequest:
         data_type: DataType = DataType.EQUIDISTANT,
         data_format: DataFormat = DataFormat.JSON,
         precision: str = "-1",
-        timezone: str = "Europe/Vienna",
+        timezone: str = "UTC",
         timeoffset: int = 0,
         csv_settings: Optional[CSVSettings] = None,
         log_settings: Optional[LogSettings] = None,
@@ -1832,11 +1832,11 @@ class CloudRequest:
         - start (int): Start time in ms. Use negative value if relative to 'End'.
         - end (int): End time in ms. Use 0 for 'End'.
         - variables (List[Variable]): List of variables with keys 'SID', 'VID', 'Selector'.
-        - points (int): Number of data points. Default is 655.
+        - points (int): Number of data points. Default is 1_000_000.
         - data_type (DataType): Data type. Default is DataType.EQUIDISTANT.
         - data_format (DataFormat): Data format. Default is DataFormat.JSON.
         - precision (str): Precision. Default is '-1'.
-        - timezone (str): Timezone specifier, e.g., 'Europe/Vienna'.
+        - timezone (str): Timezone specifier, e.g., 'Europe/Vienna' default is "UTC".
         - timeoffset (int): Time offset in seconds. Default is '0'.
         - csv_settings (Optional[CSVSettings]): Configuration for CSV format.
         Required if data_format is DataFormat.CSV.
