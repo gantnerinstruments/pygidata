@@ -4,24 +4,24 @@ Module to send simplified http request to the Cloud. (Gantner HTTP API for more 
 
 from __future__ import annotations
 
-from datetime import datetime
-from io import BytesIO
-import requests
 import datetime as dt
+import logging
+import re
+import time
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from io import BytesIO
+from pathlib import Path
+from typing import List, Dict, Optional, Union, Any, Type, cast, Tuple
+
 import numpy as np
 import pandas as pd
-import re
-import uuid
-import time
-import logging
 import pytz
-from pathlib import Path
-
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Union, Any, Type, cast, Tuple
-from requests.auth import HTTPBasicAuth
-from enum import Enum
+import requests
 from dateutil import tz, relativedelta
+from requests.auth import HTTPBasicAuth
 
 from gimodules.cloudconnect import utils, authenticate
 from gimodules.cloudconnect.exceptions import ImportTimestampError
@@ -211,13 +211,13 @@ class CloudRequest:
         self.csv_config = CsvConfig()
 
     def login(
-        self,
-        url: Optional[str] = None,
-        user: Optional[str] = None,
-        password: Optional[str] = None,
-        access_token: Optional[str] = None,
-        use_env_file: bool = False,
-        dotenv_path: Optional[str] = ".env",
+            self,
+            url: Optional[str] = None,
+            user: Optional[str] = None,
+            password: Optional[str] = None,
+            access_token: Optional[str] = None,
+            use_env_file: bool = False,
+            dotenv_path: Optional[str] = ".env",
     ) -> None:
         """Login method that handles Bearer Token/tenant,
         username/password logins, or .env file.
@@ -584,7 +584,7 @@ class CloudRequest:
 
     @staticmethod
     def _build_sensorid_querystring(
-        indices: List[str], aggregations: Optional[List[str]] = None
+            indices: List[str], aggregations: Optional[List[str]] = None
     ) -> str:
         """
         Builds a query string for the sensor IDs with optional aggregations.
@@ -617,15 +617,15 @@ class CloudRequest:
         return "\n".join(query_parts)
 
     def get_var_data_batched(
-        self,
-        sid: str,
-        index_list: List,
-        start_date: str,
-        end_date: str,
-        resolution: str = "nanos",
-        custom_column_names: Optional[List[str]] = None,
-        timezone: str = "UTC",
-        max_points: int = 700_000,
+            self,
+            sid: str,
+            index_list: List,
+            start_date: str,
+            end_date: str,
+            resolution: str = "nanos",
+            custom_column_names: Optional[List[str]] = None,
+            timezone: str = "UTC",
+            max_points: int = 700_000,
     ):
         """BETA: This makes batched calls to GraphQL. Not recommended.
         This is still about 2x slower than get_data_as_csv() since we make more http requests"""
@@ -659,7 +659,7 @@ class CloudRequest:
         )
 
     def get_var_data_batch(
-        self, sid, index_list, tss, tse, resolution, custom_column_names, timezone
+            self, sid, index_list, tss, tse, resolution, custom_column_names, timezone
     ):
         selected_index_string = (
             ",".join([f'"{index}"' for index in index_list]) if index_list else ""
@@ -723,14 +723,14 @@ class CloudRequest:
         return None
 
     def get_var_data(
-        self,
-        sid: str,
-        index_list: List[str],
-        start_date: str,
-        end_date: str,
-        resolution: str = "nanos",
-        custom_column_names: Optional[List[str]] = None,
-        timezone: str = "UTC",
+            self,
+            sid: str,
+            index_list: List[str],
+            start_date: str,
+            end_date: str,
+            resolution: str = "nanos",
+            custom_column_names: Optional[List[str]] = None,
+            timezone: str = "UTC",
     ) -> Optional[pd.DataFrame]:
         """
         Returns a pandas DataFrame with timestamps and values directly from a data stream.
@@ -812,7 +812,8 @@ class CloudRequest:
 
                 # Create the DataFrame
                 if resolution == "nanos":
-                    column_names = ["Nanos"] + (custom_column_names or self.__get_column_names(sid, index_list))
+                    column_names = ["Nanos"] + (custom_column_names
+                                                or self.__get_column_names(sid, index_list))
                     self.df = pd.DataFrame(self.data, columns=column_names)
                     self.df["Time"] = pd.to_datetime(self.df["Nanos"], unit="ms")
 
@@ -850,12 +851,12 @@ class CloudRequest:
         return None
 
     def get_data_np(
-        self,
-        sid: str,
-        index_list: List[str],
-        tss: str,
-        tse: str,
-        resolution: str = "nanos",
+            self,
+            sid: str,
+            index_list: List[str],
+            tss: str,
+            tse: str,
+            resolution: str = "nanos",
     ) -> Optional[np.ndarray]:
         """
         Returns a numpy matrix of data with timestamps and values directly from a data stream.
@@ -1001,20 +1002,20 @@ class CloudRequest:
         return []
 
     def get_data_as_csv(
-        self,
-        variables: List[GIStreamVariable],
-        resolution: str,
-        start: str,
-        end: str,
-        filepath: str = "",
-        streaming: bool = True,
-        return_df: bool = True,
-        write_file: bool = True,
-        decimal_sep: str = ".",
-        delimiter: str = ";",
-        timezone: str = "UTC",
-        aggregation: str = "avg",
-        batch: Optional[str] = None,
+            self,
+            variables: List[GIStreamVariable],
+            resolution: str,
+            start: str,
+            end: str,
+            filepath: str = "",
+            streaming: bool = True,
+            return_df: bool = True,
+            write_file: bool = True,
+            decimal_sep: str = ".",
+            delimiter: str = ";",
+            timezone: str = "UTC",
+            aggregation: str = "avg",
+            batch: Optional[str] = None,
     ) -> Optional[pd.DataFrame]:
         """
         Returns a CSV file with the data of a given list of variables.
@@ -1292,12 +1293,12 @@ class CloudRequest:
             logging.error(f"Error converting DataFrame time to timezone '{timezone}': {err}")
 
     def get_measurement_limit(
-        self,
-        sid: str,
-        limit: int,
-        start_ts: int = 0,
-        end_ts: int = 9999999999999,
-        sort: str = "DESC",
+            self,
+            sid: str,
+            limit: int,
+            start_ts: int = 0,
+            end_ts: int = 9999999999999,
+            sort: str = "DESC",
     ) -> Optional[dict]:
         """
         Retrieves measurement periods for a given stream ID (sid) with a specified limit.
@@ -1449,12 +1450,12 @@ class CloudRequest:
 
     # csv importer
     def create_import_session_csv(
-        self,
-        stream_ID: str,
-        stream_Name: str,
-        csv_config: CsvConfig,
-        create_meta_data: bool = True,
-        session_timeout: int = 60,
+            self,
+            stream_ID: str,
+            stream_Name: str,
+            csv_config: CsvConfig,
+            create_meta_data: bool = True,
+            session_timeout: int = 60,
     ) -> Optional[requests.Response]:
         """
         Creates an import session for a CSV file using the HTTP API.
@@ -1817,19 +1818,19 @@ class CloudRequest:
         return gi_vars
 
     def get_buffer_data(
-        self,
-        start: int,
-        end: int,
-        variables: List[Variable],
-        points: int = 1_000_000,
-        data_type: DataType = DataType.EQUIDISTANT,
-        data_format: DataFormat = DataFormat.JSON,
-        precision: str = "-1",
-        timezone: str = "UTC",
-        timeoffset: int = 0,
-        csv_settings: Optional[CSVSettings] = None,
-        log_settings: Optional[LogSettings] = None,
-        target: Optional[str] = None,
+            self,
+            start: int,
+            end: int,
+            variables: List[Variable],
+            points: int = 1_000_000,
+            data_type: DataType = DataType.EQUIDISTANT,
+            data_format: DataFormat = DataFormat.JSON,
+            precision: str = "-1",
+            timezone: str = "UTC",
+            timeoffset: int = 0,
+            csv_settings: Optional[CSVSettings] = None,
+            log_settings: Optional[LogSettings] = None,
+            target: Optional[str] = None,
     ) -> Union[Dict, bytes]:
         """
         Fetch data from a buffer data source via API.
@@ -1899,7 +1900,6 @@ class CloudRequest:
         else:
             # Results given in bytes
             return response.content
-
 
     def get_kafka_raw_structure(self) -> Optional[List[Dict[str, Any]]]:
         """
@@ -1993,13 +1993,12 @@ class CloudRequest:
 
         return res.content
 
-
     def delete_source(
-        self,
-        source_id: str,
-        *,
-        use_kafka: bool = False,
-        timeout: Optional[float] = None,
+            self,
+            source_id: str,
+            *,
+            use_kafka: bool = False,
+            timeout: Optional[float] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Permanently delete a stream (“source”) on the GI.Cloud backend.
