@@ -49,7 +49,7 @@ pipenv run test -v
 or 
 
 ```bash
-pytest`
+pytest
 ```
 
 ## Requirements
@@ -88,11 +88,18 @@ To **generate .rst files** from the code package, run the following command from
 ```bash
 sphinx-apidoc -o docs/source/ gimodules
 ```
+You most likely need pandoc installed on the system itself first to build:
 
-To **build the documentation**, run the following command:
+```bash
+sudo apt install pandoc
+```
+
+Then, to **build the documentation**, run the following commands:
 
 ```bash
 cd docs
+sudo apt update
+pip install --break-system-packages -r requirements.txt
 make html
 ```
 
@@ -116,8 +123,3 @@ To include type hints in the check:
 ```bash
 mpypy=true ./lint.sh [directory])
 ```
-
-#### TODO
-1. [x] lint.sh diff between black and flake8 etc
-2. [x] Usage with python 3.12
-3. [x] Doc requirements 
