@@ -1891,3 +1891,148 @@ class CloudRequest:
         else:
             # Results given in bytes
             return response.content
+
+
+    def get_kafka_raw_structure(self) -> Optional[List[Dict[str, Any]]]:
+        """
+        Return the list of all Kafka raw streams (“basic success response”).
+        Each element looks like
+            {
+                "ConfigCheckSum": "...",
+                "ConfigModTimeSec": 0,
+                "DataType": "mtdt" | "data",
+                "DeviceID": "-",
+                "ID": 1,
+                "KafkaTopic": "gi_<type>_t_<tenant>_<SourceID>_<n>",
+                "Name": "TekRecording",
+                "RetentionTimeSec": 0,
+                "SourceID": "<uuid>",
+                "StartEpochTimeSec": 0,
+                "_id": "41.3"
+            }
+
+        Returns
+        -------
+        list | None
+            – on success:   list with one entry per stream
+            – on error  :   None (already logged)
+        """
+        url = f"{self.url}/kafka/raw/structure"
+        hdr = {**self.headers, "Content-Type": "application/json"}
+
+        res = requests.get(url, headers=hdr)
+        if res.status_code in (401, 403):
+            self.refresh_access_token()
+            hdr["Authorization"] = f"Bearer {self.login_token['access_token']}"
+            res = requests.get(url, headers=hdr)
+
+        if res.ok:
+            return res.json().get("Data", [])
+        logging.error("get_kafka_raw_structure failed: %s – %s",
+                      res.status_code, res.text[:300])
+        return None
+
+    def get_kafka_raw_data(
+            self,
+            kafka_topic: str,
+            source_id: str,
+            *,
+            start_epoch_ms: int = 0,
+            end_epoch_ms: Optional[int] = None,
+            break_time_gap_ms: Optional[int] = None,
+            packet_count: int = 3,
+            chunked: bool = True,
+            compressed: bool = False,
+            timeout: Optional[float] = None,
+    ) -> bytes:
+        """
+        Download raw binary Kafka packets from the server.
+
+        Returns
+        -------
+        bytes
+            Binary response from the Kafka stream (gzip/deflate if compressed=True).
+        """
+        url = f"{self.url}/kafka/raw/data"
+        headers = {
+            **self.headers,
+            "Content-Type": "application/json",
+            "Accept-Encoding": "deflate, gzip",
+        }
+
+        payload = {
+            "KafkaTopic": kafka_topic,
+            "SourceID": source_id,
+            "StartEpochTimeMs": start_epoch_ms,
+            "PacketCount": packet_count,
+            "Chunked": chunked,
+            "Compressed": compressed,
+        }
+        if end_epoch_ms is not None:
+            payload["EndEpochTimeMs"] = end_epoch_ms
+        if break_time_gap_ms is not None:
+            payload["BreakTimeGapMs"] = break_time_gap_ms
+
+        res = requests.post(url, json=payload, headers=headers, timeout=timeout)
+        if res.status_code in (401, 403):
+            self.refresh_access_token()
+            headers["Authorization"] = f"Bearer {self.login_token['access_token']}"
+            res = requests.post(url, json=payload, headers=headers, timeout=timeout)
+
+        if not res.ok:
+            logging.error("get_kafka_raw_data failed: %s – %s", res.status_code, res.text[:300])
+            res.raise_for_status()
+
+        return res.content
+
+
+    def delete_source(
+        self,
+        source_id: str,
+        *,
+        use_kafka: bool = False,
+        timeout: Optional[float] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Permanently delete a stream (“source”) on the GI.Cloud backend.
+
+        Parameters
+        ----------
+        source_id  : str
+            UUID of the stream you want to remove.
+        use_kafka  : bool, default *False*
+            • False  → DELETE /buffer/structure/sources/{SourceID}
+            • True   → DELETE /kafka/structure/sources/{SourceID}
+        timeout    : float | None
+            Optional request timeout in seconds.
+
+        Returns
+        -------
+        dict | None
+            Parsed JSON response on success, otherwise *None* (already logged).
+
+        Notes
+        -----
+        • The operation is **irreversible** – make sure the stream really should go.
+        • A 204/200 status means success even if the backend returns an empty body.
+        """
+        base = "kafka" if use_kafka else "buffer"
+        url = f"{self.url}/{base}/structure/sources/{source_id}"
+        hdr = {**self.headers, "Content-Type": "application/json"}
+
+        res = requests.delete(url, json={}, headers=hdr, timeout=timeout)
+
+        if res.status_code in (401, 403):
+            self.refresh_access_token()
+            hdr["Authorization"] = f"Bearer {self.login_token['access_token']}"
+            res = requests.delete(url, json={}, headers=hdr, timeout=timeout)
+
+        if res.ok:
+            logging.info("Source %s successfully deleted", source_id)
+            try:
+                return res.json() if res.text else {}
+            except ValueError:
+                return {}
+        logging.error("delete_source failed for %s: %s – %s",
+                      source_id, res.status_code, res.text[:300])
+        return None
