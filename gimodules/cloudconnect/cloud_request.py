@@ -811,11 +811,17 @@ class CloudRequest:
                 self.data = self.data[valid_rows]
 
                 # Create the DataFrame
-                column_names = custom_column_names or self.__get_column_names(sid, index_list)
-                self.df = pd.DataFrame(self.data, columns=column_names)
+                if resolution == "nanos":
+                    column_names = ["Nanos"] + (custom_column_names or self.__get_column_names(sid, index_list))
+                    self.df = pd.DataFrame(self.data, columns=column_names)
+                    self.df["Time"] = pd.to_datetime(self.df["Nanos"], unit="ms")
+
+                else:
+                    column_names = custom_column_names or self.__get_column_names(sid, index_list)
+                    self.df = pd.DataFrame(self.data, columns=column_names)
+                    self.df["Time"] = pd.to_datetime(self.df["Time"], unit="ms")
 
                 # Convert time column to datetime and adjust timezone
-                self.df["Time"] = pd.to_datetime(self.df["Time"], unit="ms")
                 self.__convert_df_time_from_utc_to_tz(self.df, timezone)
 
                 return self.df
