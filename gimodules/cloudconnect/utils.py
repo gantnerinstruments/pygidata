@@ -56,6 +56,7 @@ def replace_dates_in_string(text: str, dates: List) -> str:
         new = "".join((new[: match.start()], dates[i], new[match.end() :]))
     return new
 
+
 def sanitize_filename(filename: str) -> str:
     """Replace illegal filename characters with underscores."""
     return re.sub(r'[<>:"/\\|?*]', '_', filename)
