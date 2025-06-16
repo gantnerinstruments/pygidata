@@ -1,0 +1,2 @@
+class ImportTimestampError(Exception):
+    pass

@@ -24,6 +24,7 @@ from enum import Enum
 from dateutil import tz, relativedelta
 
 from gimodules.cloudconnect import utils, authenticate
+from gimodules.cloudconnect.exceptions import ImportTimestampError
 
 # Set output level to INFO because default is WARNNG
 logging.getLogger().setLevel(logging.INFO)
@@ -1584,14 +1585,12 @@ class CloudRequest:
             logging.error(exc)
             return None
 
+        # Then use it:
         if first_ts <= self._last_import_ts(stream_id):
-            logging.info(
-                "Skipping import for stream '%s': CSV first timestamp (%s) <= last imported timestamp (%s).",
-                stream_id,
-                first_ts,
-                self._last_import_ts(stream_id),
+            raise ImportTimestampError(
+                f"Skipping import for stream '{stream_id}': CSV first timestamp "
+                f"({first_ts}) <= last imported timestamp ({self._last_import_ts(stream_id)})."
             )
-            return None
 
         # open / reuse session  ➜ upload ➜ close
         self._require_csv_session(stream_id, stream_name, cfg)
