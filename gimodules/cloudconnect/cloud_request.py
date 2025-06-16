@@ -124,6 +124,8 @@ class DataFormat(Enum):
     FAMOS = "famos"
     MDF = "mdf"
     MAT = "mat"
+    WAV = "wav"
+    RPC = "rpc"
 
 
 class DataType(Enum):
