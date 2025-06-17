@@ -1894,7 +1894,6 @@ class CloudRequest:
             # Results given in bytes
             return response.content
 
-
     def get_kafka_raw_structure(self) -> Optional[List[Dict[str, Any]]]:
         """
         Return the list of all Kafka raw streams (“basic success response”).
@@ -1987,7 +1986,6 @@ class CloudRequest:
 
         return res.content
 
-
     def delete_source(
         self,
         source_id: str,
@@ -2037,4 +2035,5 @@ class CloudRequest:
                 return {}
         logging.error("delete_source failed for %s: %s – %s",
                       source_id, res.status_code, res.text[:300])
+
         return None
