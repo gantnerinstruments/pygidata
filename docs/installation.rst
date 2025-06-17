@@ -11,9 +11,14 @@ We recommend using a virtual environment to avoid dependency conflicts:
     python -m venv .venv
     source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
-    -- Install the module
+    # Install the module
     pip install gimodules
 
+You can also install a specific verison like
+
+.. code-block:: bash
+
+    pip install gimodules==0.2.0
 
 The latest release and requirements can be found here:
 📦 https://pypi.org/project/gimodules
