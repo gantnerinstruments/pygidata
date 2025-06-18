@@ -20,11 +20,11 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'GI-Jupyter'
-copyright = '2025, Gantner Instruments'
-author = 'Gantner Instruments'
+copyright = '2025, Gantner Instruments GmbH'
+author = 'Gantner Instruments GmbH'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.2'
+release = '0.3.0'
 
 
 # -- General configuration ---------------------------------------------------

@@ -88,7 +88,7 @@ To **generate .rst files** from the code package, run the following command from
 ```bash
 sphinx-apidoc -o docs/source/ gimodules
 ```
-You most likely need pandoc installed on the system itself first to build:
+You need pandoc installed on the system itself first to build:
 
 ```bash
 sudo apt install pandoc
@@ -99,7 +99,7 @@ Then, to **build the documentation**, run the following commands:
 ```bash
 cd docs
 sudo apt update
-pip install --break-system-packages -r requirements.txt
+pip install -r requirements.txt
 make html
 ```
 

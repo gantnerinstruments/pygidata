@@ -6,13 +6,13 @@
 GI.modules (python)
 ===================
 
-GIModules is a Python wrapper the Gantner Instruments Cloud and QCore APIs.
+GIModules is a Python wrapper for the Gantner Instruments Cloud and QCore APIs.
 
-It simplifies access to the Gantner measurements by providing an interface that encapsulates the underlying
+It simplifies access to the measurements by providing an interface that encapsulates the underlying
 REST and GraphQL API's and its underlying mappings.
 
 It provides tools for data acquisition, processing, storage, and remote management,
-enabling efficient integration with Gantner systems.
+enabling efficient integration with Gantner Instruments systems.
 
 To help you get started quickly, we recommend using the provided JupyterLab environment, which supports interactive development and testing.
 See the `Overview` section for setup instructions.
