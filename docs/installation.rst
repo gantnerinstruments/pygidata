@@ -1,65 +1,30 @@
-Setting up JupyterLab
-=====================
+Installation
+============
 
-Every JupyterLab is seperated from each other and deployed on it's own Docker container.
-This means Versions, especially the JupyterLab version can differ between different instances which is depending on 
-the point in time of creation of the docker-image.
+**gimodules** is an open-source Python package available on PyPI.
+It requires **Python 3.8 or newer**.
 
-
-
-
-Docker
-------
-
-For the deployment of and docker container, an docker-image is required. Therefore a the ** INSERT PACKAGE **
-package is delivered.
-
-This package contains all requirements including ``libGInsUtility.so`` to be able to run all current python scripts on an ``Gantner cloud tenant``
-Furthermore the building the image will always pull the latest available version of Jupyter.
-
-To build an image simply run:
+We recommend using a virtual environment to avoid dependency conflicts:
 
 .. code-block:: bash
-	
-	$ docker build -t JupyterLab_image .
 
+    python -m venv .venv
+    source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
-.. note::
+    # Install the module
+    pip install gimodules
 
-	For deployment a specific Gantner docker-compose.yml file is being used.
-
-
-Compatability
--------------
-
-Note that you can build and run this docker-container on every linux-based machine.
-
-
-For local testing purposes a simple docker-compose.yml file is delivered, which can simply be run with:
+You can also install a specific verison like
 
 .. code-block:: bash
-	
-	$ docker-compose up
 
-.. warning::
+    pip install gimodules==0.2.0
 
-	Python scripts writing to the Gantner backend utilizing **libGInsUtility** will not work outside the GI.Cloud cluster.
+The latest release and installation requirements are available on PyPI:
+📦 https://pypi.org/project/gimodules
 
+If you want to contribute or setup a local development environment,
+gimodules is open source and available on `GitHub <https://github.com/gantnerinstruments/gimodules-python>`_.
 
-
-libGInsUtility
---------------
-
-The GInsData API provides a unified platform independant interface to measurement data from controllers like e.gate/pac, Q.gate/pac or Q.station and ProcessBuffers of GI.data (GI.bench). 
-No 3rd-party libraries required, stdc++ library statically linked to reduce platform/version dependencies. 
-The Gantner Library is called „giutility.dll“ (Windows) or „libGInsUtility.so“ (Linux).
-
-For detailed explanation and Python examples view the GInsUtility_Documentation_ for further information.
-
-.. _GInsUtility_Documentation: https://dev.gantner-instruments.com/webfiles/public/Download/Software/Python/ginsapy/doc/build/html/index.html
-
-.. important:: When developing with this library please refer to the  ::download:`C-Headerfile <\eGateHighSpeedPort.h>` to get have documentation of implemented functions.
-
-
-
+Make sure to read the README for installation and development instructions.
 

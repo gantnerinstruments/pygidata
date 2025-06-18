@@ -8,8 +8,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '0.2.0'
-DESCRIPTION = 'Python package to deliver a Gantner cloud interface'
+VERSION = '0.3.0'
+DESCRIPTION = 'Python package providing an interface to the Gantner Instruments Cloud API'
 LONG_DESCRIPTION = ''
 
 if sys.version_info[:2] == (3, 7):
@@ -26,7 +26,7 @@ with open(req_file) as f:
 setup(
     name="gimodules",
     version=VERSION,
-    author="gimodules devs",
+    author="Gantner Instruments GmbH",
     author_email="",
     description=DESCRIPTION,
     long_description_content_type="text/markdown",

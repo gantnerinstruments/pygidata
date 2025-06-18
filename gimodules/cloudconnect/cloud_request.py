@@ -2042,4 +2042,5 @@ class CloudRequest:
                 return {}
         logging.error("delete_source failed for %s: %s – %s",
                       source_id, res.status_code, res.text[:300])
+
         return None
