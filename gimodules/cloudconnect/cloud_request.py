@@ -4,24 +4,24 @@ Module to send simplified http request to the Cloud. (Gantner HTTP API for more 
 
 from __future__ import annotations
 
-from datetime import datetime
-from io import BytesIO
-import requests
 import datetime as dt
+import logging
+import re
+import time
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from io import BytesIO
+from pathlib import Path
+from typing import List, Dict, Optional, Union, Any, Type, cast, Tuple
+
 import numpy as np
 import pandas as pd
-import re
-import uuid
-import time
-import logging
 import pytz
-from pathlib import Path
-
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Union, Any, Type, cast, Tuple
-from requests.auth import HTTPBasicAuth
-from enum import Enum
+import requests
 from dateutil import tz, relativedelta
+from requests.auth import HTTPBasicAuth
 
 from gimodules.cloudconnect import utils, authenticate
 from gimodules.cloudconnect.exceptions import ImportTimestampError
@@ -124,6 +124,8 @@ class DataFormat(Enum):
     FAMOS = "famos"
     MDF = "mdf"
     MAT = "mat"
+    WAV = "wav"
+    RPC = "rpc"
 
 
 class DataType(Enum):
@@ -209,13 +211,13 @@ class CloudRequest:
         self.csv_config = CsvConfig()
 
     def login(
-        self,
-        url: Optional[str] = None,
-        user: Optional[str] = None,
-        password: Optional[str] = None,
-        access_token: Optional[str] = None,
-        use_env_file: bool = False,
-        dotenv_path: Optional[str] = ".env",
+            self,
+            url: Optional[str] = None,
+            user: Optional[str] = None,
+            password: Optional[str] = None,
+            access_token: Optional[str] = None,
+            use_env_file: bool = False,
+            dotenv_path: Optional[str] = ".env",
     ) -> None:
         """Login method that handles Bearer Token/tenant,
         username/password logins, or .env file.
@@ -582,7 +584,7 @@ class CloudRequest:
 
     @staticmethod
     def _build_sensorid_querystring(
-        indices: List[str], aggregations: Optional[List[str]] = None
+            indices: List[str], aggregations: Optional[List[str]] = None
     ) -> str:
         """
         Builds a query string for the sensor IDs with optional aggregations.
@@ -615,15 +617,15 @@ class CloudRequest:
         return "\n".join(query_parts)
 
     def get_var_data_batched(
-        self,
-        sid: str,
-        index_list: List,
-        start_date: str,
-        end_date: str,
-        resolution: str = "nanos",
-        custom_column_names: Optional[List[str]] = None,
-        timezone: str = "UTC",
-        max_points: int = 700_000,
+            self,
+            sid: str,
+            index_list: List,
+            start_date: str,
+            end_date: str,
+            resolution: str = "nanos",
+            custom_column_names: Optional[List[str]] = None,
+            timezone: str = "UTC",
+            max_points: int = 700_000,
     ):
         """BETA: This makes batched calls to GraphQL. Not recommended.
         This is still about 2x slower than get_data_as_csv() since we make more http requests"""
@@ -657,7 +659,7 @@ class CloudRequest:
         )
 
     def get_var_data_batch(
-        self, sid, index_list, tss, tse, resolution, custom_column_names, timezone
+            self, sid, index_list, tss, tse, resolution, custom_column_names, timezone
     ):
         selected_index_string = (
             ",".join([f'"{index}"' for index in index_list]) if index_list else ""
@@ -721,14 +723,14 @@ class CloudRequest:
         return None
 
     def get_var_data(
-        self,
-        sid: str,
-        index_list: List[str],
-        start_date: str,
-        end_date: str,
-        resolution: str = "nanos",
-        custom_column_names: Optional[List[str]] = None,
-        timezone: str = "UTC",
+            self,
+            sid: str,
+            index_list: List[str],
+            start_date: str,
+            end_date: str,
+            resolution: str = "nanos",
+            custom_column_names: Optional[List[str]] = None,
+            timezone: str = "UTC",
     ) -> Optional[pd.DataFrame]:
         """
         Returns a pandas DataFrame with timestamps and values directly from a data stream.
@@ -809,11 +811,18 @@ class CloudRequest:
                 self.data = self.data[valid_rows]
 
                 # Create the DataFrame
-                column_names = custom_column_names or self.__get_column_names(sid, index_list)
-                self.df = pd.DataFrame(self.data, columns=column_names)
+                if resolution == "nanos":
+                    column_names = ["Nanos"] + (custom_column_names
+                                                or self.__get_column_names(sid, index_list))
+                    self.df = pd.DataFrame(self.data, columns=column_names)
+                    self.df["Time"] = pd.to_datetime(self.df["Nanos"], unit="ms")
+
+                else:
+                    column_names = custom_column_names or self.__get_column_names(sid, index_list)
+                    self.df = pd.DataFrame(self.data, columns=column_names)
+                    self.df["Time"] = pd.to_datetime(self.df["Time"], unit="ms")
 
                 # Convert time column to datetime and adjust timezone
-                self.df["Time"] = pd.to_datetime(self.df["Time"], unit="ms")
                 self.__convert_df_time_from_utc_to_tz(self.df, timezone)
 
                 return self.df
@@ -842,12 +851,12 @@ class CloudRequest:
         return None
 
     def get_data_np(
-        self,
-        sid: str,
-        index_list: List[str],
-        tss: str,
-        tse: str,
-        resolution: str = "nanos",
+            self,
+            sid: str,
+            index_list: List[str],
+            tss: str,
+            tse: str,
+            resolution: str = "nanos",
     ) -> Optional[np.ndarray]:
         """
         Returns a numpy matrix of data with timestamps and values directly from a data stream.
@@ -993,20 +1002,20 @@ class CloudRequest:
         return []
 
     def get_data_as_csv(
-        self,
-        variables: List[GIStreamVariable],
-        resolution: str,
-        start: str,
-        end: str,
-        filepath: str = "",
-        streaming: bool = True,
-        return_df: bool = True,
-        write_file: bool = True,
-        decimal_sep: str = ".",
-        delimiter: str = ";",
-        timezone: str = "UTC",
-        aggregation: str = "avg",
-        batch: Optional[str] = None,
+            self,
+            variables: List[GIStreamVariable],
+            resolution: str,
+            start: str,
+            end: str,
+            filepath: str = "",
+            streaming: bool = True,
+            return_df: bool = True,
+            write_file: bool = True,
+            decimal_sep: str = ".",
+            delimiter: str = ";",
+            timezone: str = "UTC",
+            aggregation: str = "avg",
+            batch: Optional[str] = None,
     ) -> Optional[pd.DataFrame]:
         """
         Returns a CSV file with the data of a given list of variables.
@@ -1284,12 +1293,12 @@ class CloudRequest:
             logging.error(f"Error converting DataFrame time to timezone '{timezone}': {err}")
 
     def get_measurement_limit(
-        self,
-        sid: str,
-        limit: int,
-        start_ts: int = 0,
-        end_ts: int = 9999999999999,
-        sort: str = "DESC",
+            self,
+            sid: str,
+            limit: int,
+            start_ts: int = 0,
+            end_ts: int = 9999999999999,
+            sort: str = "DESC",
     ) -> Optional[dict]:
         """
         Retrieves measurement periods for a given stream ID (sid) with a specified limit.
@@ -1441,12 +1450,12 @@ class CloudRequest:
 
     # csv importer
     def create_import_session_csv(
-        self,
-        stream_ID: str,
-        stream_Name: str,
-        csv_config: CsvConfig,
-        create_meta_data: bool = True,
-        session_timeout: int = 60,
+            self,
+            stream_ID: str,
+            stream_Name: str,
+            csv_config: CsvConfig,
+            create_meta_data: bool = True,
+            session_timeout: int = 60,
     ) -> Optional[requests.Response]:
         """
         Creates an import session for a CSV file using the HTTP API.
@@ -1809,19 +1818,19 @@ class CloudRequest:
         return gi_vars
 
     def get_buffer_data(
-        self,
-        start: int,
-        end: int,
-        variables: List[Variable],
-        points: int = 1_000_000,
-        data_type: DataType = DataType.EQUIDISTANT,
-        data_format: DataFormat = DataFormat.JSON,
-        precision: str = "-1",
-        timezone: str = "Europe/Vienna",
-        timeoffset: int = 0,
-        csv_settings: Optional[CSVSettings] = None,
-        log_settings: Optional[LogSettings] = None,
-        target: Optional[str] = None,
+            self,
+            start: int,
+            end: int,
+            variables: List[Variable],
+            points: int = 1_000_000,
+            data_type: DataType = DataType.EQUIDISTANT,
+            data_format: DataFormat = DataFormat.JSON,
+            precision: str = "-1",
+            timezone: str = "UTC",
+            timeoffset: int = 0,
+            csv_settings: Optional[CSVSettings] = None,
+            log_settings: Optional[LogSettings] = None,
+            target: Optional[str] = None,
     ) -> Union[Dict, bytes]:
         """
         Fetch data from a buffer data source via API.
@@ -1830,11 +1839,11 @@ class CloudRequest:
         - start (int): Start time in ms. Use negative value if relative to 'End'.
         - end (int): End time in ms. Use 0 for 'End'.
         - variables (List[Variable]): List of variables with keys 'SID', 'VID', 'Selector'.
-        - points (int): Number of data points. Default is 655.
+        - points (int): Number of data points. Default is 1_000_000.
         - data_type (DataType): Data type. Default is DataType.EQUIDISTANT.
         - data_format (DataFormat): Data format. Default is DataFormat.JSON.
         - precision (str): Precision. Default is '-1'.
-        - timezone (str): Timezone specifier, e.g., 'Europe/Vienna'.
+        - timezone (str): Timezone specifier, e.g., 'Europe/Vienna' default is "UTC".
         - timeoffset (int): Time offset in seconds. Default is '0'.
         - csv_settings (Optional[CSVSettings]): Configuration for CSV format.
         Required if data_format is DataFormat.CSV.
@@ -1891,3 +1900,146 @@ class CloudRequest:
         else:
             # Results given in bytes
             return response.content
+
+    def get_kafka_raw_structure(self) -> Optional[List[Dict[str, Any]]]:
+        """
+        Return the list of all Kafka raw streams (“basic success response”).
+        Each element looks like
+            {
+                "ConfigCheckSum": "...",
+                "ConfigModTimeSec": 0,
+                "DataType": "mtdt" | "data",
+                "DeviceID": "-",
+                "ID": 1,
+                "KafkaTopic": "gi_<type>_t_<tenant>_<SourceID>_<n>",
+                "Name": "TekRecording",
+                "RetentionTimeSec": 0,
+                "SourceID": "<uuid>",
+                "StartEpochTimeSec": 0,
+                "_id": "41.3"
+            }
+
+        Returns
+        -------
+        list | None
+            – on success:   list with one entry per stream
+            – on error  :   None (already logged)
+        """
+        url = f"{self.url}/kafka/raw/structure"
+        hdr = {**self.headers, "Content-Type": "application/json"}
+
+        res = requests.get(url, headers=hdr)
+        if res.status_code in (401, 403):
+            self.refresh_access_token()
+            hdr["Authorization"] = f"Bearer {self.login_token['access_token']}"
+            res = requests.get(url, headers=hdr)
+
+        if res.ok:
+            return res.json().get("Data", [])
+        logging.error("get_kafka_raw_structure failed: %s – %s",
+                      res.status_code, res.text[:300])
+        return None
+
+    def get_kafka_raw_data(
+            self,
+            kafka_topic: str,
+            source_id: str,
+            *,
+            start_epoch_ms: int = 0,
+            end_epoch_ms: Optional[int] = None,
+            break_time_gap_ms: Optional[int] = None,
+            packet_count: int = 3,
+            chunked: bool = True,
+            compressed: bool = False,
+            timeout: Optional[float] = None,
+    ) -> bytes:
+        """
+        Download raw binary Kafka packets from the server.
+
+        Returns
+        -------
+        bytes
+            Binary response from the Kafka stream (gzip/deflate if compressed=True).
+        """
+        url = f"{self.url}/kafka/raw/data"
+        headers = {
+            **self.headers,
+            "Content-Type": "application/json",
+            "Accept-Encoding": "deflate, gzip",
+        }
+
+        payload = {
+            "KafkaTopic": kafka_topic,
+            "SourceID": source_id,
+            "StartEpochTimeMs": start_epoch_ms,
+            "PacketCount": packet_count,
+            "Chunked": chunked,
+            "Compressed": compressed,
+        }
+        if end_epoch_ms is not None:
+            payload["EndEpochTimeMs"] = end_epoch_ms
+        if break_time_gap_ms is not None:
+            payload["BreakTimeGapMs"] = break_time_gap_ms
+
+        res = requests.post(url, json=payload, headers=headers, timeout=timeout)
+        if res.status_code in (401, 403):
+            self.refresh_access_token()
+            headers["Authorization"] = f"Bearer {self.login_token['access_token']}"
+            res = requests.post(url, json=payload, headers=headers, timeout=timeout)
+
+        if not res.ok:
+            logging.error("get_kafka_raw_data failed: %s – %s", res.status_code, res.text[:300])
+            res.raise_for_status()
+
+        return res.content
+
+    def delete_source(
+            self,
+            source_id: str,
+            *,
+            use_kafka: bool = False,
+            timeout: Optional[float] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Permanently delete a stream (“source”) on the GI.Cloud backend.
+
+        Parameters
+        ----------
+        source_id  : str
+            UUID of the stream you want to remove.
+        use_kafka  : bool, default *False*
+            • False  → DELETE /buffer/structure/sources/{SourceID}
+            • True   → DELETE /kafka/structure/sources/{SourceID}
+        timeout    : float | None
+            Optional request timeout in seconds.
+
+        Returns
+        -------
+        dict | None
+            Parsed JSON response on success, otherwise *None* (already logged).
+
+        Notes
+        -----
+        • The operation is **irreversible** – make sure the stream really should go.
+        • A 204/200 status means success even if the backend returns an empty body.
+        """
+        base = "kafka" if use_kafka else "buffer"
+        url = f"{self.url}/{base}/structure/sources/{source_id}"
+        hdr = {**self.headers, "Content-Type": "application/json"}
+
+        res = requests.delete(url, json={}, headers=hdr, timeout=timeout)
+
+        if res.status_code in (401, 403):
+            self.refresh_access_token()
+            hdr["Authorization"] = f"Bearer {self.login_token['access_token']}"
+            res = requests.delete(url, json={}, headers=hdr, timeout=timeout)
+
+        if res.ok:
+            logging.info("Source %s successfully deleted", source_id)
+            try:
+                return res.json() if res.text else {}
+            except ValueError:
+                return {}
+        logging.error("delete_source failed for %s: %s – %s",
+                      source_id, res.status_code, res.text[:300])
+        return None
