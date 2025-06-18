@@ -27,6 +27,13 @@ cloud.get_all_stream_metadata()
 
 https://packaging.python.org/en/latest/tutorials/packaging-projects/
 
+**Hint:** If you are debugging the source code with a jupyter notebook, run this code in the `first cell` to enable autoreloading source code changes.
+
+```bash
+%load_ext autoreload
+%autoreload 2
+```
+
 ## Distribute with CI / CD
 Edit setup.py version number and create a release.
 -> Creating a release will trigger the workflow to push the package to PyPi
