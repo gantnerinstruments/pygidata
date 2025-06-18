@@ -20,8 +20,11 @@ You can also install a specific verison like
 
     pip install gimodules==0.2.0
 
-The latest release and requirements can be found here:
+The latest release and installation requirements are available on PyPI:
 📦 https://pypi.org/project/gimodules
 
-For contributors or those setting up a local development environment,
-please follow the instructions in the project's `README.md`.
+If you want to contribute or setup a local development environment,
+gimodules is open source and available on `GitHub <https://github.com/gantnerinstruments/gimodules-python>`_.
+
+Make sure to read the README for installation and development instructions.
+

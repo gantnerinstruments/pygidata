@@ -27,7 +27,3 @@ The package section describes the modules and submodules of the gimodules packag
    installation
    Usage
    source/gimodules
-
-.. raw:: html
-
-    <a href="_static/Usage.zip" download>📥 Download Usage.ipynb (notebook) as (.zip)</a>
