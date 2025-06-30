@@ -11,7 +11,29 @@ import ssl
 import certifi
 from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+import time
+import threading
+
+message_counter = 0
+lock = threading.Lock()
+
+def message_count_logger():
+    global message_counter
+    while True:
+        time.sleep(1)
+        with lock:
+            count = message_counter
+            message_counter = 0
+        logging.info(f"Messages received in last second: {count}")
+
+# Start background logging thread
+threading.Thread(target=message_count_logger, daemon=True).start()
 
 
 # Enums translated from TypeScript
@@ -73,7 +95,7 @@ class Worker:
         self.subscribers = []
 
     def add_subscriber(self, subscriber):
-        pass
+        self.subscribers.append(subscriber)
 
 
 class SocketService:
@@ -148,7 +170,7 @@ class GInsWebSocket:
     def connect(self, url, on_open=None, ssl_context=None):
         self.ws = websocket.WebSocketApp(
             url,
-            on_open=on_open,  # Pass the on_open handler here
+            on_open=on_open,
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
@@ -192,7 +214,7 @@ class SubscriberEvents:
         pass
 
     def on_receive(self, id, payload, additional_information):
-        pass
+        logging.info(f"Online data: {payload}")
 
     def on_error(self, id, payload, additional_information):
         pass
@@ -207,7 +229,8 @@ class Subscriber:
         self.events = events
 
     def notify(self, message_type, payload, message_format):
-        pass
+        if message_type == GInsWSMessageTypes.WSMsgType_Publish:
+            self.events.on_receive(self.id, payload, AdditionalInformation())
 
 
 class GInsWSClient:
@@ -240,7 +263,7 @@ class GIWebSocket:
             url += f"?apitoken={access_token}"
         self.uncreated_workers.append(worker_component)
 
-        # Now, we need to connect
+        # We connect
         def on_open(ws):
             self.socket_service = SocketService(ws)
             # Register pre-defined environment worker
@@ -260,7 +283,7 @@ class GIWebSocket:
 
         instance.connect(
             url, on_open=on_open, ssl_context=ssl_context
-        )  # Pass the on_open handler here
+        )
         # instance.connect(url, on_open=on_open)
 
     def create_pre_defined_worker(self, pre_defined_worker):
@@ -342,25 +365,26 @@ if __name__ == "__main__":
     gi_websocket = GIWebSocket(is_ssl=False)
 
     # Read Online Data
-    VIDs = ["4bcbdc16-e621-11ec-8426-d43b040eddc2"]
+    VIDs = ["628e2ed6-21a3-11ee-8bf2-a41cb405973e"]
 
     def get_online_data_config():
         return {
             "IntervalMs": 1,
-            "VIDs": ["4bcbdc16-e621-11ec-8426-d43b040eddc2"],
-            "ExtendedAnswer": False,
-            "OnValueChange": True,
+            "VIDs": VIDs,
+            "ExtendedAnswer": True,
+            "OnValueChanged": False,
             "Precision": -1,
         }
 
     component = WSWorkerComponent(
         id=1, worker_type=GInsWSWorkerTypes.WSWorkerType_OnlineData, config=get_online_data_config()
     )
-    gi_websocket.connect(login_required=True, worker_component=component)
+    gi_websocket.connect(login_required=False, worker_component=component)
 
-    # Write Online Data (Setpoint variables)
+    """
+    # Write Online Data (Setpoint variables) (has to be input/output and check type)
     write_payload = {
-        "Variables": ["0ecebc14-b721-11eb-8f35-d43b040eddc2"],
+        "Variables": ["628e2ed6-21a3-11ee-8bf2-a41cb405973e"],
         "Values": [5.123],
         "Function": "write",
     }
@@ -369,6 +393,17 @@ if __name__ == "__main__":
 
     time.sleep(3)
     gi_websocket.publish(worker_component=component, payload=write_payload)
+
+    write_payload = {
+        "Variables": ["628e2ed6-21a3-11ee-8bf2-a41cb405973e"],
+        "Values": [5.126],
+        "Function": "write",
+    }
+    time.sleep(3)
+    gi_websocket.publish(worker_component=component, payload=write_payload)
+    """
+
+
 
     # Authenticate/System State
     """
