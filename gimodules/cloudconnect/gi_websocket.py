@@ -17,8 +17,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-import time
-import threading
 
 message_counter = 0
 lock = threading.Lock()
@@ -186,7 +184,10 @@ class GInsWebSocket:
             self.ws.close()
 
     def on_message(self, ws, message):
-        logging.info("Received message: %s", message)
+        global message_counter
+        with lock:
+            message_counter += 1
+        #logging.info("Received message: %s", message)
         pass
 
     def on_error(self, ws, error):
@@ -381,7 +382,6 @@ if __name__ == "__main__":
     )
     gi_websocket.connect(login_required=False, worker_component=component)
 
-    """
     # Write Online Data (Setpoint variables) (has to be input/output and check type)
     write_payload = {
         "Variables": ["628e2ed6-21a3-11ee-8bf2-a41cb405973e"],
@@ -401,7 +401,7 @@ if __name__ == "__main__":
     }
     time.sleep(3)
     gi_websocket.publish(worker_component=component, payload=write_payload)
-    """
+
 
 
 
