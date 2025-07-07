@@ -12,6 +12,12 @@ pytz==2024.1
 Requests==2.32.3
 seaborn~=0.11.2
 sqlalchemy~=2.0.32
-websocket_client
+websocket_client~=1.8.0
 pytest
 pipenv
+setuptools~=80.9.0
+httpx~=0.28.1
+pytest-asyncio
+nest-asyncio~=1.6.0
+respx~=0.22.0
+pydantic~=2.11.7
