@@ -27,6 +27,10 @@ class AsyncHTTP:
         self._auth = auth_manager
         self._client = httpx.AsyncClient(base_url=self._base, timeout=timeout)
 
+    @property
+    def base_url(self) -> str:
+        return self._base
+
     async def get(
             self,
             url: str,

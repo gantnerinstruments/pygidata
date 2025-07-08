@@ -21,3 +21,4 @@ pytest-asyncio
 nest-asyncio~=1.6.0
 respx~=0.22.0
 pydantic~=2.11.7
+websockets~=15.0.1

@@ -8,6 +8,7 @@ import nest_asyncio
 import pandas as pd
 
 from gimodules.gi_data.drivers.local_http import LocalHTTPDriver
+from gimodules.gi_data.drivers.ws_stream import WebSocketDriver
 from gimodules.gi_data.infra.auth import AuthManager
 from gimodules.gi_data.infra.http import AsyncHTTP
 from gimodules.gi_data.mapping.models import GIStream
@@ -50,6 +51,7 @@ class GIDataClient:
             username: Optional[str] = None,
             password: Optional[str] = None,
     ) -> None:
+        self._ws_driver: Optional[WebSocketDriver] = None
         self._auth = AuthManager(base_url, username, password)
         self._http = AsyncHTTP(base_url, self._auth)
         self._driver = LocalHTTPDriver(self._auth, self._http, None)
@@ -108,7 +110,6 @@ class GIDataClient:
             end_ms: int = 0,
             points: int = 2048,
     ) -> pd.DataFrame:
-        """Return historical data as pandas DataFrame."""
         return _run(
             self._driver.fetch_history(
                 source_id,
@@ -119,6 +120,59 @@ class GIDataClient:
                 points=points,
             )
         )
+
+    # ------------------------------- Websocket ------------------------- #
+
+    async def stream_online(
+            self,
+            var_ids: List[UUID],
+            *,
+            interval_ms: int = 1,
+            extended: bool = True,
+            on_change: bool = True,
+            precision: int = -1,
+    ):
+        """
+        Async generator that yields {uuid: value} ticks.
+
+        Example:
+            async for tick in client.stream_online([vid], interval_ms=10):
+                print(tick)
+        """
+        driver = await self._ensure_ws_driver()
+        async for update in driver.stream_online(
+                var_ids,
+                interval_ms=interval_ms,
+                extended=extended,
+                on_change=on_change,
+                precision=precision,
+        ):
+            yield update
+
+    async def publish_online(
+            self,
+            data: Dict[UUID, float] | List[tuple[UUID, float]],
+            *,
+            function: str = "write",
+    ) -> None:
+        """
+        Push values (set-point variables).
+
+        Example:
+            await client.publish_online({vid: 42.0})
+        """
+        driver = await self._ensure_ws_driver()
+        await driver.publish(data, function=function)
+
+    async def _ensure_ws_driver(self):
+        """Lazy-initialise the Web-Socket layer exactly once."""
+        if self._ws_driver is None:
+            from gimodules.gi_data.infra.ws import AsyncWS
+            from gimodules.gi_data.drivers.ws_stream import WebSocketDriver
+
+            ws = AsyncWS(self._http.base_url, self._auth)
+            self._ws_driver = WebSocketDriver(self._auth, ws, self._http)
+        return self._ws_driver
 
     def close(self) -> None:
         """Close all underlying network connections."""
