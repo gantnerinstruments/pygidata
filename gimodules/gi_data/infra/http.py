@@ -6,9 +6,9 @@ from typing import Any, Mapping, MutableMapping, Optional
 import httpx
 
 from gimodules.gi_data.infra.auth import AuthManager
+from gimodules.gi_data.utils.logging import setup_module_logger
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = setup_module_logger(__name__, level=logging.DEBUG)
 
 
 class AsyncHTTP:
