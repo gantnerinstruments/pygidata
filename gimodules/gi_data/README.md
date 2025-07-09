@@ -48,6 +48,9 @@ tests/  docs/  examples/
 ```
 
 
+Q.core: kafka, history, (could be cloud)-gql
+
+
 ### Facade
 
 ```

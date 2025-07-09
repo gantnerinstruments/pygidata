@@ -49,7 +49,7 @@ class LocalHTTPDriver(BaseDriver):
 
     async def list_sources(self) -> List[GIStream]:
         res = await self.http.get("/buffer/structure/sources")
-        return [GIStream.parse_obj(d) for d in res.json()["Data"]]
+        return [GIStream.model_validate(d) for d in res.json()["Data"]]
 
     async def list_stream_variables(
         self,

@@ -21,7 +21,7 @@ class AsyncHTTP:
             self,
             base_url: str,
             auth_manager: AuthManager,  # forward reference
-            timeout: float = 20.0,
+            timeout: float = 160.0,
     ) -> None:
         self._base = base_url.rstrip("/")
         self._auth = auth_manager
@@ -88,6 +88,8 @@ class AsyncHTTP:
             res.status_code,
             len(res.content),
         )
+        logger.debug("Response Content: %s", res.content)
+
         if res.status_code >= 400:
             logger.debug("Response Body (Error, first 500 chars): %s", res.text[:500])
 

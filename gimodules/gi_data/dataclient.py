@@ -84,8 +84,8 @@ class GIDataClient:
             self,
             selectors: List[Tuple[Union[UUID, int], UUID]],
             *,
-            start_ms: int = -20_000,
-            end_ms: int = 0,
+            start_ms: float = -20_000,
+            end_ms: float = 0,
             points: int = 2048,
     ) -> pd.DataFrame:
         return _run(
@@ -106,8 +106,8 @@ class GIDataClient:
             measurement_id: UUID,
             var_ids: List[UUID],
             *,
-            start_ms: int = 0,
-            end_ms: int = 0,
+            start_ms: float = 0,
+            end_ms: float = 0,
             points: int = 2048,
     ) -> pd.DataFrame:
         return _run(

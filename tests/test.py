@@ -1,0 +1,54 @@
+import asyncio
+from pprint import pprint
+from random import random
+
+from IPython.core.display_functions import display
+
+from gimodules.gi_data.dataclient import GIDataClient
+
+
+
+async def buffer():
+    BASE = "http://10.1.50.36:8090"
+    BASE = "http://qcore-111001:8090" # stream
+    BASE = "http://qcore-111004:8090"  # records
+
+
+    client = GIDataClient(BASE, username="admin", password="admin")
+
+    src = client.list_buffer_sources()[0]
+
+    vars = client.list_stream_variables(src.id)[:10]
+    selectors = [(v.sid, v.id) for v in vars]
+
+    for i in range(0, 2):
+        df = client.fetch_buffer(selectors, start_ms=1752066551495.4802, end_ms=-1752070152495.4802)
+        pprint(df.head())
+        df.to_csv("debug_output.csv")
+
+
+
+
+def subscribe_publish():
+    import asyncio
+    from uuid import UUID
+    from gimodules.gi_data.dataclient import GIDataClient
+
+    client = GIDataClient("http://10.1.50.36:8090")
+
+
+    vids = [UUID(m["Id"]) for m in client.list_variables()[:4]]
+
+    async def live_stream():
+        async for tick in client.stream_online(vids, interval_ms=10000, on_change=True):
+            #print("tick:", tick)
+            # Variable has to be Output or Input/Output
+            await client.publish_online({vids[3]: random()})
+
+    asyncio.run(live_stream())
+
+
+
+if __name__ == '__main__':
+    #subscribe_publish()
+    asyncio.run(buffer())

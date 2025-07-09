@@ -21,8 +21,8 @@ class VarSelector(BaseModel):
 class BufferRequest(BaseModel):
     """Validated body for `/buffer/data`."""
 
-    Start: int = -20_000
-    End: int = 0
+    Start: float = -20_000
+    End: float = 0
     Variables: List[VarSelector]
     Points: int = 655
     Type: str = "equidistant"
@@ -56,14 +56,19 @@ class TimeSeries(BaseModel):
         frozen = True
 
 
-class BufferSuccess(BaseModel):
-    """Top-level Basic Success wrapper."""
+class BufferItem(BaseModel):
+    TimeSeries: TimeSeries
 
+class BufferSuccess(BaseModel):
     Success: bool
-    Data: Dict
+    Data: List[BufferItem]
 
     def first_timeseries(self) -> TimeSeries:
-        return TimeSeries.model_validate(self.Data["TimeSeries"])
+        return self.Data[0].TimeSeries
+
+    def timeseries_list(self) -> List[TimeSeries]:
+        return [item.TimeSeries for item in self.Data]
+
 
 
 class GIStream(BaseModel):
@@ -72,8 +77,8 @@ class GIStream(BaseModel):
     name: str = Field(alias="Name")
     id: Union[UUID, int] = Field(alias="Id")
     sample_rate_hz: float = Field(alias="SampleRateHz")
-    first_ts: int = Field(alias="AbsoluteStart")
-    last_ts: int = Field(alias="LastTimeStamp")
+    first_ts: float = Field(alias="AbsoluteStart")
+    last_ts: float = Field(alias="LastTimeStamp")
     index: int = Field(alias="Index")
 
     class Config:
@@ -89,7 +94,7 @@ class GIStreamVariable(BaseModel):
     index: int = Field(alias="Index")
     unit: str = Field(alias="Unit")
     data_type: str = Field(alias="DataFormat")
-    sid: Union[str, int]
+    sid: Union[str, int, UUID]
 
     class Config:
         validate_by_name = True
