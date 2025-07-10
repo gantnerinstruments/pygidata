@@ -1,29 +1,36 @@
 import asyncio
+import time
 from pprint import pprint
 from random import random
 
-from IPython.core.display_functions import display
-
 from gimodules.gi_data.dataclient import GIDataClient
+import logging
+from gimodules.gi_data.utils.logging import setup_module_logger
 
-
+logger = setup_module_logger(__name__, level=logging.DEBUG)
 
 async def buffer():
     BASE = "http://10.1.50.36:8090"
-    BASE = "http://qcore-111001:8090" # stream
-    BASE = "http://qcore-111004:8090"  # records
+    #BASE = "http://qcore-111001:8090" # stream
+    #BASE = "http://qcore-111004:8090"  # records
 
 
     client = GIDataClient(BASE, username="admin", password="admin")
 
     src = client.list_buffer_sources()[0]
 
-    vars = client.list_stream_variables(src.id)[:10]
+    logger.info(f"Selected Buffer source: {src}")
+
+    vars = client.list_stream_variables(src.id)[:1]
     selectors = [(v.sid, v.id) for v in vars]
 
+    logger.info(f"Selected variables: {selectors}")
+
     for i in range(0, 2):
-        df = client.fetch_buffer(selectors, start_ms=1752066551495.4802, end_ms=-1752070152495.4802)
+        #df = client.fetch_buffer(selectors, start_ms=1752066551495.4802, end_ms=-1752070152495.4802)
+        df = client.fetch_buffer(selectors, start_ms=-10_000, end_ms=0)
         pprint(df.head())
+        time.sleep(1)
         df.to_csv("debug_output.csv")
 
 

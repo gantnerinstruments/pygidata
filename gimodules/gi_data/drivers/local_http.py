@@ -67,8 +67,8 @@ class LocalHTTPDriver(BaseDriver):
             self,
             selectors: List[Tuple[Union[UUID, str, int], UUID]],
             *,
-            start_ms: int = -20_000,
-            end_ms: int = 0,
+            start_ms: float = -20_000,
+            end_ms: float = 0,
             points: int = 2048,
     ) -> pd.DataFrame:
         # Build validated VarSelector objects

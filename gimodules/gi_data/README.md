@@ -48,7 +48,12 @@ tests/  docs/  examples/
 ```
 
 
-Q.core: kafka, history, (could be cloud)-gql
+**Data Access possibilities on different platforms:**
+
+GI.bench: buffer, history
+GI.cloud: kafka, GQL
+Q.station: buffer, history
+Q.core: kafka, history, (could be a cloud instance)-GQL
 
 
 ### Facade

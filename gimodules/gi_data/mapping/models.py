@@ -61,14 +61,16 @@ class BufferItem(BaseModel):
 
 class BufferSuccess(BaseModel):
     Success: bool
-    Data: List[BufferItem]
-
-    def first_timeseries(self) -> TimeSeries:
-        return self.Data[0].TimeSeries
+    Data: Union[BufferItem, List[BufferItem]]
 
     def timeseries_list(self) -> List[TimeSeries]:
-        return [item.TimeSeries for item in self.Data]
+        if isinstance(self.Data, list):
+            return [item.TimeSeries for item in self.Data]
+        else:
+            return [self.Data.TimeSeries]
 
+    def first_timeseries(self) -> TimeSeries:
+        return self.timeseries_list()[0]
 
 
 class GIStream(BaseModel):
