@@ -2,19 +2,27 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional, Tuple, Union
+import inspect
+import logging
+from typing import Any, Dict, List, Optional, Tuple, Union, Type
 from uuid import UUID
 
 import nest_asyncio
 import pandas as pd
 
+from gimodules.gi_data.drivers.kafka_stream import KafkaStreamDriver
 from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
-from gimodules.gi_data.drivers.ws_stream import WebSocketDriver
-from gimodules.gi_data.infra.auth       import AuthManager
-from gimodules.gi_data.infra.http       import AsyncHTTP
-from gimodules.gi_data.mapping.models   import GIStream
+from gimodules.gi_data.drivers.ws_stream  import WebSocketDriver
+from gimodules.gi_data.infra.auth         import AuthManager
+from gimodules.gi_data.infra.http         import AsyncHTTP
+from gimodules.gi_data.mapping.models     import GIStream
+from gimodules.gi_data.utils.logging      import setup_module_logger
 
+logger = setup_module_logger(__name__, level=logging.DEBUG)
 
+# ------------------------------------------------------------------ #
+# helpers                                                            #
+# ------------------------------------------------------------------ #
 asyncio.set_event_loop(asyncio.new_event_loop())
 
 
@@ -47,13 +55,33 @@ class GIDataClient:
         *,
         username: Optional[str] = None,
         password: Optional[str] = None,
+
+        driver_cls: Type = HTTPTimeSeriesDriver,
+        driver_kwargs: Optional[dict] = None,
     ) -> None:
+        self._kafka = None
         self._auth  = AuthManager(base_url, username, password)
         self._http  = AsyncHTTP(base_url, self._auth)
 
+        driver_kwargs = driver_kwargs or {}
+
+        # ------------------------------------------------------------------
+        # driver factory that only passes supported ctor-arguments
+        # ------------------------------------------------------------------
+        def _build_driver(domain: str):
+            sig = inspect.signature(driver_cls)           # ctor signature
+            kw: Dict[str, Any] = {"client_id": None, **driver_kwargs}
+
+            # only add "domain" if the driver accepts it
+            if "domain" in sig.parameters:
+                kw["domain"] = domain
+
+            kw = {k: v for k, v in kw.items() if k in sig.parameters}
+            return driver_cls(self._auth, self._http, **kw)
+
         # domain drivers
         self._drivers: Dict[str, HTTPTimeSeriesDriver] = {
-            "buffer" : HTTPTimeSeriesDriver(self._auth, self._http, None, "buffer"),
+            "buffer" : HTTPTimeSeriesDriver(self._auth, self._http, None, "kafka"),
             "history": HTTPTimeSeriesDriver(self._auth, self._http, None, "history"),
         }
 
@@ -154,6 +182,27 @@ class GIDataClient:
             self._ws_driver = WebSocketDriver(self._auth, ws, self._http)
         return self._ws_driver
 
+    # ---------------------------- kafka ------------------------------ #
+    async def stream_kafka(
+        self,
+        var_ids: List[UUID],
+        *,
+        ssl: bool = False,
+        group_id: str = "gi_data_client",
+    ):
+        driver = await self._ensure_kafka_driver()
+        logger.debug(f"Kafka driver: {driver}")
+        async for update in driver.stream(var_ids, ssl=ssl, group_id=group_id):
+            logger.debug("Kafka update: %s", update)
+            yield update
+
+    async def _ensure_kafka_driver(self) -> KafkaStreamDriver:
+        if self._kafka is None:
+            from gimodules.gi_data.drivers.kafka_stream import KafkaStreamDriver
+            self._kafka = KafkaStreamDriver(self._auth, self._http)
+        return self._kafka
+
+    # ------------------------ housekeeping --------------------------- #
     def close(self) -> None:
         _run(self._http.aclose())
 
