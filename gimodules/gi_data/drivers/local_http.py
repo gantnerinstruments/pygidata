@@ -13,7 +13,7 @@ from gimodules.gi_data.mapping.models import (
     GIStream,
     GIStreamVariable,
     TimeSeries,
-    VarSelector,
+    VarSelector, HistorySuccess, HistoryRequest, GIHistoryMeasurement,
 )
 
 
@@ -48,14 +48,14 @@ class LocalHTTPDriver(BaseDriver):
     # ------------------------------- Buffer --------------------------- #
 
     async def list_sources(self) -> List[GIStream]:
-        res = await self.http.get("/buffer/structure/sources")
+        res = await self.http.get("/history/structure/sources")
         return [GIStream.model_validate(d) for d in res.json()["Data"]]
 
     async def list_stream_variables(
         self,
         source_id: Union[str, int, UUID],
     ) -> List[GIStreamVariable]:
-        path = f"/buffer/structure/sources/{source_id}/variables"
+        path = f"/history/structure/sources/{source_id}/variables"
         res = await self.http.get(path)
         raw = res.json()["Data"]
         return [
@@ -92,12 +92,43 @@ class LocalHTTPDriver(BaseDriver):
         )
 
     # ------------------------------- History -------------------------- #
-    # (unchanged – omitted for brevity)                                  #
 
+    async def list_measurements(self, source_id: Union[str, int, UUID]) -> List[GIHistoryMeasurement]:
+        res = await self.http.get(f"/history/structure/sources/{source_id}/measurements")
+        return [GIHistoryMeasurement.model_validate(d) for d in res.json()["Data"]]
 
-# ------------------------------------------------------------------#
-# helpers                                                            #
-# ------------------------------------------------------------------#
+    async def fetch_history(
+        self,
+        source_id: Union[str, int, UUID],
+        measurement_id: Union[str, int, UUID],
+        var_ids: List[UUID],
+        *,
+        start_ms: float = 0,
+        end_ms: float = 0,
+        points: int = 2048,
+    ) -> pd.DataFrame:
+
+        # From API Doc - does not work in reality
+        # req = HistoryRequest(
+        #     SID=source_id,
+        #     MID=measurement_id,
+        #     Start=start_ms,
+        #     End=end_ms,
+        #     Points=points,
+        #     Variables=var_ids,
+        # )
+        variables: List[VarSelector] = [
+            VarSelector(SID=source_id, VID=v) for v in var_ids
+        ]
+        req = BufferRequest(
+            Start=start_ms,
+            End=end_ms,
+            Points=points,
+            Variables=variables,
+        )
+        res = await self.http.post("/history/data", json=req.model_dump(by_alias=True, mode="json"))
+        ts = HistorySuccess.model_validate(res.json()).first_timeseries()
+        return _timeseries_to_frame(ts, var_ids)
 
 
 def _timeseries_to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:

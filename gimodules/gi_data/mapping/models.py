@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Literal, Union, Dict, Any
+from typing import List, Union, Dict, Any
 from uuid import UUID
-
 from pydantic import BaseModel, Field
 
-
 class VarSelector(BaseModel):
-    """SID–VID selector used in `/buffer/data` requests."""
-
-    SID: Union[UUID, str, int]
+    SID: Union[UUID, str, int] | None = None
     VID: UUID
     Selector: str = Field(default="latest")
 
@@ -19,8 +15,6 @@ class VarSelector(BaseModel):
 
 
 class BufferRequest(BaseModel):
-    """Validated body for `/buffer/data`."""
-
     Start: float = -20_000
     End: float = 0
     Variables: List[VarSelector]
@@ -36,9 +30,24 @@ class BufferRequest(BaseModel):
         frozen = True
 
 
-class TimeSeries(BaseModel):
-    """Time‑series payload inside the Success→Data list."""
+class HistoryRequest(BaseModel):
+    SID: Union[UUID, str, int]
+    MID: Union[UUID, str, int]
+    Start: float = 0
+    End: float = 0
+    Variables: List[UUID]
+    Points: int = 2048
+    Type: str = "equidistant"
+    Format: str = "json"
+    Precision: int = -1
+    TimeZone: str = "Europe/Vienna"
+    TimeOffset: int = 0
 
+    class Config:
+        validate_by_name = True
+        frozen = True
+
+class TimeSeries(BaseModel):
     Type: str
     Format: str
     Unit: str
@@ -48,7 +57,7 @@ class TimeSeries(BaseModel):
     End: float
     Size: int
     MeasurementId: Union[UUID, str, int]
-    Updating: bool
+    Updating: bool | None = None
     Values: List[List[float]]
 
     class Config:
@@ -56,26 +65,24 @@ class TimeSeries(BaseModel):
         frozen = True
 
 
-class BufferItem(BaseModel):
+class _Item(BaseModel):
     TimeSeries: TimeSeries
+
 
 class BufferSuccess(BaseModel):
     Success: bool
-    Data: Union[BufferItem, List[BufferItem]]
-
-    def timeseries_list(self) -> List[TimeSeries]:
-        if isinstance(self.Data, list):
-            return [item.TimeSeries for item in self.Data]
-        else:
-            return [self.Data.TimeSeries]
+    Data: Union[_Item, List[_Item]]
 
     def first_timeseries(self) -> TimeSeries:
-        return self.timeseries_list()[0]
+        first = self.Data[0] if isinstance(self.Data, list) else self.Data
+        return first.TimeSeries
+
+
+class HistorySuccess(BufferSuccess):
+    pass  # identical layout
 
 
 class GIStream(BaseModel):
-    """Descriptor of a buffer or history stream."""
-
     name: str = Field(alias="Name")
     id: Union[UUID, int] = Field(alias="Id")
     sample_rate_hz: float = Field(alias="SampleRateHz")
@@ -89,8 +96,6 @@ class GIStream(BaseModel):
 
 
 class GIStreamVariable(BaseModel):
-    """Metadata for one variable inside a stream."""
-
     id: str = Field(alias="Id")
     name: str = Field(alias="Name")
     index: int = Field(alias="Index")
@@ -101,3 +106,13 @@ class GIStreamVariable(BaseModel):
     class Config:
         validate_by_name = True
         frozen = True
+
+
+class GIHistoryMeasurement(BaseModel):
+    id: Union[UUID, int] = Field(alias="Id")
+    name: str = Field(alias="Name")
+    absolute_start: float = Field(alias="AbsoluteStart")
+    last_ts: float = Field(alias="LastTimeStamp")
+
+    # keep any extra keys we don’t care about
+    model_config = dict(validate_by_name=True, frozen=True, extra="ignore")
