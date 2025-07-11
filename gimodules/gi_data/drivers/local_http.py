@@ -17,7 +17,7 @@ from gimodules.gi_data.mapping.models import (
 )
 
 
-class LocalHTTPDriver(BaseDriver):
+class HTTPTimeSeriesDriver(BaseDriver):
     """
     Data-API implementation for GI.bench / Q.core / Q.station.
     """
@@ -25,8 +25,11 @@ class LocalHTTPDriver(BaseDriver):
     name = "local_http"
     priority = 20
 
-    # ------------------------------- Online --------------------------- #
+    def __init__(self, auth, http, ws, root: str) -> None:
+        super().__init__(auth, http, ws)
+        self._root = root.strip("/")  # “buffer”, ”history”, …
 
+    # -------- Online -------------------------------------------------
     async def list_variables(self) -> List[Dict[str, Any]]:
         res = await self.http.get("/online/structure/variables")
         return res.json().get("Data", [])
@@ -34,112 +37,67 @@ class LocalHTTPDriver(BaseDriver):
     async def read(self, var_ids: List[UUID]) -> Dict[UUID, float]:
         payload = {"Variables": [str(v) for v in var_ids], "Function": "read"}
         res = await self.http.post("/online/data", json=payload)
-        values = res.json()["Data"]["Values"]
-        return {vid: val for vid, val in zip(var_ids, values)}
+        vals = res.json()["Data"]["Values"]
+        return dict(zip(var_ids, vals))
 
     async def write(self, mapping: Dict[UUID, float]) -> None:
         payload = {
-            "Variables": [str(v) for v in mapping.keys()],
+            "Variables": [str(v) for v in mapping],
             "Values": list(mapping.values()),
             "Function": "write",
         }
         await self.http.post("/online/data", json=payload)
 
-    # ------------------------------- Buffer --------------------------- #
-
+    # -------- Structure ---------------------------------------------
     async def list_sources(self) -> List[GIStream]:
-        res = await self.http.get("/history/structure/sources")
+        res = await self.http.get(f"/{self._root}/structure/sources")
         return [GIStream.model_validate(d) for d in res.json()["Data"]]
 
     async def list_stream_variables(
-        self,
-        source_id: Union[str, int, UUID],
+            self, sid: Union[str, int, UUID]
     ) -> List[GIStreamVariable]:
-        path = f"/history/structure/sources/{source_id}/variables"
-        res = await self.http.get(path)
+        res = await self.http.get(f"/{self._root}/structure/sources/{sid}/variables")
         raw = res.json()["Data"]
-        return [
-            GIStreamVariable.model_validate(r | {"sid": source_id})
-            for r in raw
-        ]
+        return [GIStreamVariable.model_validate(r | {"sid": sid}) for r in raw]
 
-    async def fetch_buffer(
-            self,
-            selectors: List[Tuple[Union[UUID, str, int], UUID]],
-            *,
-            start_ms: float = -20_000,
-            end_ms: float = 0,
-            points: int = 2048,
-    ) -> pd.DataFrame:
-        # Build validated VarSelector objects
-        variables: List[VarSelector] = [
-            VarSelector(SID=s, VID=v) for s, v in selectors
-        ]
-        req = BufferRequest(
-            Start=start_ms,
-            End=end_ms,
-            Points=points,
-            Variables=variables,
-        )
-
-        res = await self.http.post(
-            "/buffer/data",
-            json=req.model_dump(by_alias=True, mode="json"),
-        )
-        ts = BufferSuccess.model_validate(res.json()).first_timeseries()
-        return _timeseries_to_frame(
-            ts, [UUID(str(v.VID)) for v in variables]
-        )
-
-    # ------------------------------- History -------------------------- #
-
-    async def list_measurements(self, source_id: Union[str, int, UUID]) -> List[GIHistoryMeasurement]:
-        res = await self.http.get(f"/history/structure/sources/{source_id}/measurements")
+    async def list_measurements(  # only for history
+            self, sid: Union[str, int, UUID]
+    ) -> List[GIHistoryMeasurement]:
+        if self._root != "history":
+            raise RuntimeError("measurements only exist on /history")
+        res = await self.http.get(f"/history/structure/sources/{sid}/measurements")
         return [GIHistoryMeasurement.model_validate(d) for d in res.json()["Data"]]
 
-    async def fetch_history(
-        self,
-        source_id: Union[str, int, UUID],
-        measurement_id: Union[str, int, UUID],
-        var_ids: List[UUID],
-        *,
-        start_ms: float = 0,
-        end_ms: float = 0,
-        points: int = 2048,
+    # -------- Data ---------------------------------------------------
+    async def fetch(
+            self,
+            selectors: List[Tuple[Union[str, int, UUID], UUID]],
+            *,
+            start_ms: float,
+            end_ms: float,
+            points: int = 2048,
     ) -> pd.DataFrame:
+        vars_ = [VarSelector(SID=s, VID=v) for s, v in selectors]
+        req = BufferRequest(Start=start_ms, End=end_ms, Points=points, Variables=vars_)
 
-        # From API Doc - does not work in reality
-        # req = HistoryRequest(
-        #     SID=source_id,
-        #     MID=measurement_id,
-        #     Start=start_ms,
-        #     End=end_ms,
-        #     Points=points,
-        #     Variables=var_ids,
-        # )
-        variables: List[VarSelector] = [
-            VarSelector(SID=source_id, VID=v) for v in var_ids
-        ]
-        req = BufferRequest(
-            Start=start_ms,
-            End=end_ms,
-            Points=points,
-            Variables=variables,
-        )
-        res = await self.http.post("/history/data", json=req.model_dump(by_alias=True, mode="json"))
-        ts = HistorySuccess.model_validate(res.json()).first_timeseries()
-        return _timeseries_to_frame(ts, var_ids)
+        res = await self.http.post(f"/{self._root}/data",
+                                   json=req.model_dump(by_alias=True, mode="json"))
+
+        if self._root == "history":
+            ts = HistorySuccess.model_validate(res.json()).first_timeseries()
+        else:
+            ts = BufferSuccess.model_validate(res.json()).first_timeseries()
+
+        return _to_frame(ts, [UUID(str(v.VID)) for v in vars_])
 
 
-def _timeseries_to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
-    start_s = ts.AbsoluteStart / 1_000.0
-    delta_s = ts.Delta / 1_000.0
-    count = len(ts.Values[0])
+def _to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
+    start_s = ts.AbsoluteStart / 1_000
+    dt_s = ts.Delta / 1_000
     idx = pd.to_datetime(
-        [start_s + i * delta_s for i in range(count)], unit="s", utc=True
+        [start_s + i * dt_s for i in range(len(ts.Values[0]))],
+        unit="s", utc=True
     ).tz_convert(timezone.utc)
 
     data = {str(uid): ts.Values[i] for i, uid in enumerate(order)}
-    frame = pd.DataFrame(data, index=idx)
-    frame.index.name = "time"
-    return frame
+    return pd.DataFrame(data, index=idx).rename_axis("time")

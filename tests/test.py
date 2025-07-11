@@ -40,12 +40,12 @@ async def history():
 
     client = GIDataClient(BASE, username="admin", password="admin")
 
-    src = client.list_buffer_sources()[0]
+    src = client.list_history_sources()[0]
     logger.info(f"Selected Buffer source: {src}")
     meas = client.list_history_measurements(src.id)[-1]
 
     logger.info(f"Selected Measurement : {meas}")
-    vars_ = [UUID(v.id) for v in client.list_stream_variables(src.id)[:2]]
+    vars_ = [UUID(v.id) for v in client.list_history_variables(src.id)[:2]]
 
     df = client.fetch_history(src.id, meas.id, vars_, start_ms=meas.absolute_start, end_ms=meas.last_ts)
     print(df.head())
