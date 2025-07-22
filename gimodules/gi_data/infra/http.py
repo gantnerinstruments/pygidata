@@ -66,9 +66,9 @@ class AsyncHTTP:
             params: Optional[Mapping[str, Any]],
             json: Any | None,
     ) -> httpx.Response:
-        hdrs: MutableMapping[str, str] = {"content-type": "application/json"}
+        headers: MutableMapping[str, str] = {"content-type": "application/json"}
         token = await self._auth.bearer()
-        hdrs["authorization"] = f"Bearer {token}"
+        headers["authorization"] = f"Bearer {token}"
 
         logger.debug(
             "Request: %s %s%s | Params: %s | Payload: %s",
@@ -80,7 +80,7 @@ class AsyncHTTP:
         )
 
         res = await self._client.request(
-            method, url, headers=hdrs, params=params, json=json
+            method, url, headers=headers, params=params, json=json
         )
 
         logger.debug(

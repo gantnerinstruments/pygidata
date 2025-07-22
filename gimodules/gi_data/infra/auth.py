@@ -3,10 +3,14 @@ from __future__ import annotations
 import asyncio
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, MutableMapping
+import logging
 
 import httpx
 
+from gimodules.gi_data.utils.logging import setup_module_logger
+
+logger = setup_module_logger(__name__, level=logging.DEBUG)
 
 class AuthError(RuntimeError):
     """Raised if login or refresh cannot obtain a valid access token."""
@@ -28,17 +32,25 @@ class AuthManager:
             username: Optional[str] = None,
             password: Optional[str] = None,
             client_id: str = "gibench",
+            access_token: Optional[str] = None,
     ) -> None:
         self._base = base_url.rstrip("/")
         self._user = username or os.getenv("GI_USER")
         self._pw = password or os.getenv("GI_PASSWORD")
         self._client_id = client_id
+        self._access_token = access_token or os.getenv("GI_TOKEN")
         self._token: Optional[str] = None
         self._refresh: Optional[str] = None
         self._expires: datetime = datetime.min.replace(tzinfo=timezone.utc)
         self._sync_client = httpx.Client(base_url=f"{self._base}/rpc/", timeout=20.0)
-        if self._login_required():
+
+        if not access_token and self._login_required():
             self._login()
+
+        if access_token:
+            self._token = access_token
+            self._refresh = access_token
+            self._expires = datetime.max.replace(tzinfo=timezone.utc) # unlimited
 
     async def bearer(self) -> str | None:
         """
@@ -56,10 +68,22 @@ class AuthManager:
             # No login required; no token needed
             return None
 
+    def bearer_sync(self) -> Optional[str]:
+        if self._token and datetime.now(tz=timezone.utc) < self._expires:
+            return self._token
+        if self._refresh:
+            try:
+                self._refresh_token()
+                return self._token
+            except AuthError("Unable to refresh token"):
+                return None
+        return None
+
     def _rpc_post(self, method: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        headers = {}
-        if self._token:
-            headers["Authorization"] = f"Bearer {self._token}"
+        headers: MutableMapping[str, str] = {"content-type": "application/json"}
+        token = self.bearer_sync()
+        headers["authorization"] = f"Bearer {token}"
+
         res = self._sync_client.post(f"{method}", json=payload, headers=headers)
         res.raise_for_status()
         return res.json()

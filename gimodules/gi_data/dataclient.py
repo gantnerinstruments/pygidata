@@ -55,12 +55,12 @@ class GIDataClient:
         *,
         username: Optional[str] = None,
         password: Optional[str] = None,
-
+        access_token: Optional[str] = None,
         driver_cls: Type = HTTPTimeSeriesDriver,
         driver_kwargs: Optional[dict] = None,
     ) -> None:
         self._kafka = None
-        self._auth  = AuthManager(base_url, username, password)
+        self._auth  = AuthManager(base_url, username, password, access_token=access_token)
         self._http  = AsyncHTTP(base_url, self._auth)
 
         driver_kwargs = driver_kwargs or {}
