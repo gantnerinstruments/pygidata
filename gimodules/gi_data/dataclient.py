@@ -80,8 +80,12 @@ class GIDataClient:
             return driver_cls(self._auth, self._http, **kw)
 
         # domain drivers
+        cloud_env = self._auth.is_cloud_environment()
+
+        buffer_domain = "kafka" if cloud_env else "buffer"
+
         self._drivers: Dict[str, HTTPTimeSeriesDriver] = {
-            "buffer" : HTTPTimeSeriesDriver(self._auth, self._http, None, "kafka"),
+            "buffer": HTTPTimeSeriesDriver(self._auth, self._http, None, buffer_domain),
             "history": HTTPTimeSeriesDriver(self._auth, self._http, None, "history"),
         }
 

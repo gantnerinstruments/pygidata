@@ -37,6 +37,8 @@ class AuthManager:
         self._refresh: Optional[str] = None
         self._expires: datetime = datetime.min.replace(tzinfo=timezone.utc)
         self._sync_client = httpx.Client(base_url=f"{self._base}/rpc/", timeout=20.0)
+        if self._login_required():
+            self._login()
 
     async def bearer(self) -> str | None:
         """
@@ -55,10 +57,12 @@ class AuthManager:
             return None
 
     def _rpc_post(self, method: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        res = self._sync_client.post(f"{method}", json=payload)
+        headers = {}
+        if self._token:
+            headers["Authorization"] = f"Bearer {self._token}"
+        res = self._sync_client.post(f"{method}", json=payload, headers=headers)
         res.raise_for_status()
-        body = res.json()
-        return body
+        return res.json()
 
     def _login_required(self) -> bool:
         body = self._rpc_post("AdminAPI.LoginRequired", {})
@@ -86,3 +90,18 @@ class AuthManager:
         self._refresh = body.get("RefreshToken")
         lifetime = int(body.get("ExpiresIn", 0))
         self._expires = datetime.now(tz=timezone.utc) + timedelta(seconds=lifetime)
+
+    def is_cloud_environment(self) -> bool:
+            # cloud
+            try:
+                body = self._rpc_post("ConfigAPI.GetGlobalSettings", {})
+                return body["Config"].get("CloudEnvironment", False)
+            except httpx.HTTPStatusError:
+                pass  # fallback
+
+            # controller fallback
+            try:
+                body = self._rpc_post("AdminAPI.GetGlobalSettings", {})
+                return body["Config"].get("CloudEnvironment", False)
+            except httpx.HTTPStatusError as e:
+                raise AuthError("Unable to determine environment: both RPC endpoints failed") from e

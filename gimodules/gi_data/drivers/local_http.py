@@ -27,7 +27,7 @@ class HTTPTimeSeriesDriver(BaseDriver):
 
     def __init__(self, auth, http, ws, root: str) -> None:
         super().__init__(auth, http, ws)
-        self._root = root.strip("/")  # “buffer”, ”history”, …
+        self._root = root.strip("/")  # “buffer”, ”history”, kafka
 
     # -------- Online -------------------------------------------------
     async def list_variables(self) -> List[Dict[str, Any]]:

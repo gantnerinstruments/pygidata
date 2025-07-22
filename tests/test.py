@@ -37,18 +37,19 @@ async def online():
         df.to_csv("debug_output.csv")
 
 async def buffer():
-    BASE = "http://10.1.50.36:8090"
-    #BASE = "http://qcore-111001:8090" # stream
+    #BASE = "http://10.1.50.41:8090"
+    #BASE = "http://qcore-111001:8091" # stream
     #BASE = "http://qcore-111004:8090"  # records
 
-
-    client = GIDataClient(BASE, username="admin", password="admin")
+    BASE = "https://demo.gi-cloud.io"
+    client = GIDataClient(BASE, username="admin", password="asd8fAasEd")
+    #client = GIDataClient(BASE, username="admin", password="admin")
 
     src = client.list_buffer_sources()[0]
 
     logger.info(f"Selected Buffer source: {src}")
 
-    vars = client.list_stream_variables(src.id)[:1]
+    vars = client.list_stream_variables(src.id)[:10]
     selectors = [(v.sid, v.id) for v in vars]
 
     logger.info(f"Selected variables: {selectors}")
@@ -183,8 +184,8 @@ async def cloud_test() -> None:
 
 if __name__ == '__main__':
     #subscribe_publish()
-    #asyncio.run(buffer())
+    asyncio.run(buffer())
     #asyncio.run(history())
     #asyncio.run(cloud_test())
     #stream_kafka_test()
-    asyncio.run(online())
+    #asyncio.run(online())
