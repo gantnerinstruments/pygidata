@@ -2,7 +2,6 @@ import asyncio
 import time
 from pprint import pprint
 from random import random
-from typing import List
 from uuid import UUID
 
 import pandas as pd
@@ -17,8 +16,7 @@ logger = setup_module_logger(__name__, level=logging.DEBUG)
 
 async def online():
     BASE = "https://demo.gi-cloud.io"  # cloud
-
-    client = GIDataClient(BASE, username="admin", password="asd8fAasEd")
+    client = GIDataClient(BASE, access_token='9a430f6c-5bd1-473d-9a78-a1ec93796540')
 
     src = client.list_buffer_sources()[0]
 
@@ -40,24 +38,30 @@ async def buffer():
     #BASE = "http://10.1.50.41:8090"
     #BASE = "http://qcore-111001:8091" # stream
     #BASE = "http://qcore-111004:8090"  # records
-
-    BASE = "https://demo.gi-cloud.io"
-    client = GIDataClient(BASE, username="admin", password="asd8fAasEd")
     #client = GIDataClient(BASE, username="admin", password="admin")
 
-    src = client.list_buffer_sources()[0]
+    BASE = "https://demo.gi-cloud.io"
+    client = GIDataClient(BASE, access_token='9a430f6c-5bd1-473d-9a78-a1ec93796540')
 
+
+    buffers = client.list_buffer_sources()
+
+    #src = next((s for s in buffers if s.name == "demo_otf4"), None)
+    src = buffers[0]
     logger.info(f"Selected Buffer source: {src}")
 
-    vars = client.list_stream_variables(src.id)[:10]
+    vars = client.list_stream_variables(src.id)[:1]
     selectors = [(v.sid, v.id) for v in vars]
 
     logger.info(f"Selected variables: {selectors}")
 
-    for i in range(0, 2):
+    for i in range(0, 1):
         #df = client.fetch_buffer(selectors, start_ms=1752066551495.4802, end_ms=-1752070152495.4802)
-        df = client.fetch_buffer(selectors, start_ms=-10_000, end_ms=0)
+        #1637045140000
+        df = client.fetch_buffer(selectors, start_ms=-100000, end_ms=0)
         pprint(df.head())
+        print(df.tail())
+        print(len(df.index))
         time.sleep(1)
         df.to_csv("debug_output.csv")
 

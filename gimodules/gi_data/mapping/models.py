@@ -58,7 +58,7 @@ class TimeSeries(BaseModel):
     Size: int
     MeasurementId: Union[UUID, str, int]
     Updating: bool | None = None
-    Values: List[List[float]]
+    Values: List[List[float | None]]
 
     class Config:
         validate_by_name = True

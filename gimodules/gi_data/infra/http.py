@@ -76,19 +76,19 @@ class AsyncHTTP:
             self._base,
             url,
             params if params else "None",
-            "<present>" if json else "None",
+            json if json else "None",
         )
 
         res = await self._client.request(
             method, url, headers=headers, params=params, json=json
         )
 
-        logger.debug(
+        logger.info(
             "Response: %s | Content-Length: %d",
             res.status_code,
             len(res.content),
         )
-        logger.debug("Response Content: %s", res.content)
+        #logger.debug("Response Content: %s", res.content)
 
         if res.status_code >= 400:
             logger.debug("Response Body (Error, first 500 chars): %s", res.text[:500])
