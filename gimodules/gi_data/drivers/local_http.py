@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import timezone
 from typing import Any, Dict, List, Tuple, Union
 from uuid import UUID
 
@@ -13,7 +13,7 @@ from gimodules.gi_data.mapping.models import (
     GIStream,
     GIStreamVariable,
     TimeSeries,
-    VarSelector, HistorySuccess, HistoryRequest, GIHistoryMeasurement,
+    VarSelector, HistorySuccess, GIHistoryMeasurement,
 )
 
 
@@ -92,12 +92,11 @@ class HTTPTimeSeriesDriver(BaseDriver):
 
 
 def _to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
-    start_s = ts.AbsoluteStart / 1_000
-    dt_s = ts.Delta / 1_000
-    idx = pd.to_datetime(
-        [start_s + i * dt_s for i in range(len(ts.Values[0]))],
-        unit="s", utc=True
-    ).tz_convert(timezone.utc)
+    start_ns = int(ts.Start * 1_000_000)
+    dt_ns = int(ts.Delta * 1_000_000)
+    idx_ns = [start_ns + i * dt_ns for i in range(len(ts.Values[0]))]
 
     data = {str(uid): ts.Values[i] for i, uid in enumerate(order)}
-    return pd.DataFrame(data, index=idx).rename_axis("time")
+    return pd.DataFrame(data, index=idx_ns).rename_axis("timestamp_ns")
+
+

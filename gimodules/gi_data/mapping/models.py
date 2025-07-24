@@ -40,7 +40,7 @@ class HistoryRequest(BaseModel):
     Type: str = "equidistant"
     Format: str = "json"
     Precision: int = -1
-    TimeZone: str = "Europe/Vienna"
+    TimeZone: str = "UTC"
     TimeOffset: int = 0
 
     class Config:
