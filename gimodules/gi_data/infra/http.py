@@ -88,7 +88,7 @@ class AsyncHTTP:
             res.status_code,
             len(res.content),
         )
-        #logger.debug("Response Content: %s", res.content)
+        logger.debug("Response Content: %s", res.content)
 
         if res.status_code >= 400:
             logger.debug("Response Body (Error, first 500 chars): %s", res.text[:500])

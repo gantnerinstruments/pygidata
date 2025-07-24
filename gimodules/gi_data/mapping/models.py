@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class VarSelector(BaseModel):
     SID: Union[UUID, str, int] | None = None
     VID: UUID
-    Selector: str = Field(default="latest")
+    Selector: str = Field(default="latest") # latest=buffer | or measurement ID
 
     class Config:
         validate_by_name = True
