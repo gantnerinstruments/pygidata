@@ -23,6 +23,9 @@ cloud.get_all_stream_metadata()
 
 # Development
 
+### Used as submodule in
+* gi-sphinx
+
 ### Information on how to manually distribute this package can be found here
 
 https://packaging.python.org/en/latest/tutorials/packaging-projects/
