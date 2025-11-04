@@ -55,25 +55,54 @@ or
 pytest
 ```
 
-## Requirements
+### Generate loose requirements
 
-When starting to develop you can install the requirements with:
+**Do this in a bash shell using the lowest version you want to support!**
 
-```bash
-pip install -r requirements.txt
+Install uv to easily install all needed python versions (coss-platform)
+
+``` bash
+pip install uv
 ```
 
-When you add new components and the requirements change, 
-you can find out what packages are needed by the project and create new requirements:
-
 ```bash
-pipreqs .
+python -m pip install -U pip tox
 ```
 
-To create project all current packages installed in your venv for requirements automatically:
+```bash
+python -m pip install pip-tools
+```
+```bash
+python -m pip install pipreqs
+```
+
+
+To ensure we support multiple python versions we don't want to pin every dependency.
+Instead, we pin everything on the lowest version (that we support) and make
+it loose for every version above.
+
+from root package dir (/gimodules-python)
 
 ```bash
-pip3 freeze > requirements.txt
+./gen-requirements.sh
+```
+
+#### Ensure python-package version compatibility
+
+```bash
+uv python install 3.10 3.11 3.12 3.13 3.14
+```
+
+Now run for all envs
+
+```bash
+tox
+```
+
+of for a specific version only -> look what you defined in pyproject.toml
+
+```bash
+tox -e py310
 ```
 ---
 

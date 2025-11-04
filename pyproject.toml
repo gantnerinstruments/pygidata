@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gimodules"
+version = "0.3.0"
+description = "Python package providing an interface to the Gantner Instruments Data API"
+readme = "README.md"
+authors = [{ name = "Gantner Instruments GmbH" }]
+requires-python = ">=3.7,<3.13"
+keywords = ["python"]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: Unix",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows"
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["gimodules*"]
+
+[tool.setuptools.dynamic]
+# Default dependency file
+dependencies = { file = ["requirements.txt"] }
+
+# Optional: you can use environment markers inside your requirements.txt
+# instead of multiple files (recommended modern approach).
+# However, if you truly want separate files like before, you can add a simple
+# setup hook (see below).
+
+[tool.tox]
+env_list = ["py37", "py38", "py39", "py310", "py311", "py312"]
+
+[tool.tox.env_run_base]
+deps = [
+  "pytest>=7",
+  "pytest-xdist",
+]
+commands = [
+  ["pytest", "-q"]
+]
+package = "wheel"
