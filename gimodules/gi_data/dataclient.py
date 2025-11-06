@@ -10,12 +10,14 @@ from uuid import UUID
 import nest_asyncio
 import pandas as pd
 
+from gimodules.gi_data.drivers.base import BaseDriver
+from gimodules.gi_data.drivers.cloud_gql import CloudGQLDriver
 from gimodules.gi_data.drivers.kafka_stream import KafkaStreamDriver
 from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
 from gimodules.gi_data.drivers.ws_stream  import WebSocketDriver
 from gimodules.gi_data.infra.auth         import AuthManager
 from gimodules.gi_data.infra.http         import AsyncHTTP
-from gimodules.gi_data.mapping.models     import GIStream
+from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable
 from gimodules.gi_data.utils.logging      import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -82,10 +84,11 @@ class GIDataClient:
         # domain drivers
         cloud_env = self._auth.is_cloud_environment()
 
-        buffer_domain = "kafka" if cloud_env else "buffer"
+        buffer_driver = CloudGQLDriver(self._auth, self._http) if cloud_env \
+                        else HTTPTimeSeriesDriver(self._auth, self._http, None, "buffer")
 
-        self._drivers: Dict[str, HTTPTimeSeriesDriver] = {
-            "buffer": HTTPTimeSeriesDriver(self._auth, self._http, None, buffer_domain),
+        self._drivers: Dict[str, BaseDriver] = {
+            "buffer":  buffer_driver,                                   # ← cloud => GQL Raw
             "history": HTTPTimeSeriesDriver(self._auth, self._http, None, "history"),
         }
 
@@ -105,7 +108,7 @@ class GIDataClient:
     def list_buffer_sources(self) -> List[GIStream]:
         return _run(self._drivers["buffer"].list_sources())
 
-    def list_stream_variables(self, source_id: Union[UUID, int]):
+    def list_stream_variables(self, source_id: Union[UUID, int]) -> List[GIStreamVariable]:
         return _run(self._drivers["buffer"].list_stream_variables(source_id))
 
     def fetch_buffer(
@@ -117,7 +120,7 @@ class GIDataClient:
         points:   int   = 2048,
     ) -> pd.DataFrame:
         return _run(
-            self._drivers["buffer"].fetch(
+            self._drivers["buffer"].fetch_buffer(
                 selectors, start_ms=start_ms, end_ms=end_ms, points=points
             )
         )

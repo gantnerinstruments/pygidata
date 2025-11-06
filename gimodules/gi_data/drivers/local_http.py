@@ -69,7 +69,7 @@ class HTTPTimeSeriesDriver(BaseDriver):
         return [GIHistoryMeasurement.model_validate(d) for d in res.json()["Data"]]
 
     # -------- Data ---------------------------------------------------
-    async def fetch(
+    async def fetch_buffer(
             self,
             selectors: List[Tuple[Union[str, int, UUID], UUID]],
             *,

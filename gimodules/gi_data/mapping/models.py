@@ -22,7 +22,7 @@ class BufferRequest(BaseModel):
     Type: str = "equidistant"
     Format: str = "json"
     Precision: int = -1
-    TimeZone: str = "Europe/Vienna"
+    TimeZone: str = "UTC" # Europe/Vienna
     TimeOffset: int = 0
 
     class Config:
@@ -98,6 +98,7 @@ class GIStream(BaseModel):
 class GIStreamVariable(BaseModel):
     id: str = Field(alias="Id")
     name: str = Field(alias="Name")
+    gql_id: str | None = Field(alias="GQLId", default=None)
     index: int = Field(alias="Index")
     unit: str = Field(alias="Unit")
     data_type: str = Field(alias="DataFormat")
