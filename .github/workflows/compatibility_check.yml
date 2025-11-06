@@ -1,7 +1,7 @@
 name: Python Package Compatibility
 
 on:
-  push:
+  workflow_dispatch:
     branches:
       - '**'
   pull_request:
