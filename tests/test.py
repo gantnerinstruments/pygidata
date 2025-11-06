@@ -2,6 +2,7 @@ import asyncio
 import time
 from pprint import pprint
 from random import random
+from typing import List
 from uuid import UUID
 
 import pandas as pd
@@ -15,19 +16,15 @@ logger = setup_module_logger(__name__, level=logging.DEBUG)
 
 # ─────── CONFIGURATION ─────────────────────────────────────────────────────────
 
-ACTIVE_PROFILE = "cloud"  # Change this to: "stream", "records", "cloud", "local"
+ACTIVE_PROFILE = "cloud"  # Change this to: "stream", "records", "cloud", "qstation"
 
 CONFIGS = {
-    "stream": {
-        "base": "http://qcore-111001:8091",
+    "qcore": {
+        "base": "http://qcore-111006:8090",
         "auth": {"username": "admin", "password": "admin"}
     },
-    "records": {
-        "base": "http://qcore-111004:8090",
-        "auth": {"username": "admin", "password": "admin"}
-    },
-    "local": {
-        "base": "http://10.1.50.41:8090",
+    "qstation": {
+        "base": "http://10.1.50.36:8090",
         "auth": {"username": "admin", "password": "admin"}
     },
     "cloud": {
@@ -36,17 +33,36 @@ CONFIGS = {
     },
 }
 
-def get_client() -> GIDataClient:
-    conf = CONFIGS[ACTIVE_PROFILE]
+def get_client(config = CONFIGS[ACTIVE_PROFILE]) -> GIDataClient:
+    conf = config
     if "access_token" in conf["auth"]:
         return GIDataClient(conf["base"], access_token=conf["auth"]["access_token"])
     return GIDataClient(conf["base"], username=conf["auth"]["username"], password=conf["auth"]["password"])
 
 # ─────── TEST CASES ────────────────────────────────────────────────────────────
 
+def subscribe_publish():
+    import asyncio
+
+    client = get_client(CONFIGS["qstation"])
+
+
+    variables = client.list_variables()
+    vids = [v.id for v in variables]
+
+    var_to_write = next((v for v in variables if v.name == "SP_1"), None)
+
+    async def live_stream():
+        async for tick in client.stream_online(vids, interval_ms=1_000, on_change=True):
+            print("Subscribe tick:", tick)
+            # Variable has to be Output or Input/Output
+            await client.publish_online({var_to_write.id: random()})
+
+    asyncio.run(live_stream())
+
+
 async def online():
-    BASE = "https://demo.gi-cloud.io"  # cloud
-    client = GIDataClient(BASE, access_token='9a430f6c-5bd1-473d-9a78-a1ec93796540')
+    client = get_client(CONFIGS["cloud"])
 
     src = client.list_buffer_sources()[0]
     logger.info("Selected src: {}".format(src))
@@ -57,17 +73,17 @@ async def online():
 
     for i in range(0, 2):
         #df = client.fetch_buffer(selectors, start_ms=1752066551495.4802, end_ms=-1752070152495.4802)
-        df = client.fetch_buffer(selectors, start_ms=-10_000, end_ms=0)
+        df = client.fetch_buffer(selectors, start_ms=src.last_ts-9999, end_ms=src.last_ts)
         pprint(df.head())
         time.sleep(1)
         df.to_csv("debug_output.csv")
 
 async def buffer():
-    client = get_client()
+    client = get_client(CONFIGS["cloud"])
 
     buffers = client.list_buffer_sources()
     #src = next((s for s in buffers if s.name == "demo_otf4"), None)
-    src = buffers[8]
+    src = buffers[0]
     logger.info(f"Selected Buffer source: {src}")
 
     vars = client.list_stream_variables(src.id)[:1]
@@ -78,7 +94,7 @@ async def buffer():
         #df = client.fetch_buffer(selectors, start_ms=1752066551495.4802, end_ms=-1752070152495.4802)
         #1637045140000
         # resolution depending on if we have enough points set
-        df = client.fetch_buffer(selectors, start_ms=-99999, end_ms=0, points=10000000)
+        df = client.fetch_buffer(selectors, start_ms=src.last_ts-9999, end_ms=src.last_ts, points=10000000)
         pprint(df.head())
         print(df.tail())
         print(len(df.index))
@@ -99,21 +115,6 @@ async def history():
     df = client.fetch_history(src.id, meas.id, vars_, start_ms=meas.absolute_start, end_ms=meas.last_ts)
     print(df.head())
 
-def subscribe_publish():
-    import asyncio
-    from uuid import UUID
-    from gimodules.gi_data.dataclient import GIDataClient
-
-    client = GIDataClient("http://10.1.50.36:8090")
-    vids = [UUID(m["Id"]) for m in client.list_variables()[:4]]
-
-    async def live_stream():
-        async for tick in client.stream_online(vids, interval_ms=10_000, on_change=True):
-            #print("tick:", tick)
-            # Variable has to be Output or Input/Output
-            await client.publish_online({vids[3]: random()})
-
-    asyncio.run(live_stream())
 
 def stream_kafka_test():
     async def stream():
@@ -138,67 +139,54 @@ def head(df: pd.DataFrame, n: int = 5) -> None:
     logging.info("\n%s", df.head(n).to_string())
 
 async def cloud_test() -> None:
-    BASE_URL = "https://demo.gi-cloud.io"
+    BASE_URL = "https://demo.gistg.lovelysystems.com"
     DRIVER = CloudGQLDriver
-    TOKEN = "61edd4db-7d7f-4da2-9f52-d6997c120e86"
+    TOKEN = "f9795021-d81e-49fc-8c4e-66df373a07f3"
 
     client = GIDataClient(
         BASE_URL,
         driver_cls=DRIVER,
-        username="admin",
-        password="asd8fAasEd",
-        #access_token=TOKEN if TOKEN else None,
+        access_token=TOKEN if TOKEN else None,
     )
 
     # 1) ─── ONLINE READ / WRITE ───────────────────────────────────── #
-    # online_raw = client.list_variables()
-    # online_vids: List[UUID] = [UUID(v["Id"]) for v in online_raw[:3]]
-    #
-    # logging.info("Reading online vars %s", online_vids)
-    # values = client.read_online(online_vids)
-    # logging.info("Online values: %s", values)
-    #
-    # logging.info("Writing %.3f back to %s", 42.123, online_vids[-1])
-    # client.write_online({online_vids[-1]: 42.123})
+    online_raw = client.list_variables()
+    online_vids: List[UUID] = [UUID(v["Id"]) for v in online_raw[:3]]
+
+    logging.info("Reading online vars %s", online_vids)
+    values = client.read_online(online_vids)
+    logging.info("Online values: %s", values)
+
+    logging.info("Writing %.3f back to %s", 42.123, online_vids[-1])
+    client.write_online({online_vids[-1]: 42.123})
 
     # 2) ─── BUFFER WINDOW ------------------------------------------ #
-    src = client.list_buffer_sources()[0]
-    vars_ = client.list_stream_variables(src.id)[:1]
-    selectors = [(v.sid, v.id) for v in vars_]
-
-    logging.info("Fetching last 5 s buffer window from %s", src.name)
-    buf_df = client.fetch_buffer(selectors, start_ms=-5_000, end_ms=0)
-    head(buf_df)
+    # src = client.list_buffer_sources()[0]
+    # vars_ = client.list_stream_variables(src.id)[:99]
+    # selectors = [(v.sid, v.id) for v in vars_]
+    #
+    # logging.info("Fetching last 5 s buffer window from %s", src.name)
+    #
+    # buf_df = client.fetch_buffer(selectors, start_ms=1738368000000, end_ms=1738368300000, points=10_0000)
+    #
+    # buf_df.to_csv("debug_output.csv")
 
     # 3) ─── HISTORY SLICE ------------------------------------------ #
-    meas = client.list_history_measurements(src.id)[-1]
-    hist_df = client.fetch_history(
-        src.id,
-        meas["Id"],
-        [UUID(vars_[0].id)],
-        start_ms=meas["Start"],
-        end_ms=meas["End"],
-    )
-    head(hist_df)
-
-    # 4) ─── WEBSOCKET STREAM + PUBLISH LOOP ― run 5 ticks ―───────── #
-    async def ws_loop() -> None:
-        for i, tick in enumerate(await client.stream_online(online_vids, interval_ms=1_000)):
-            logging.info("tick %d → %s", i, tick)
-            await client.publish_online({online_vids[-1]: random()})
-            if i >= 4:
-                break
-
-    logging.info("Starting 5-tick WebSocket demo …")
-    await ws_loop()
-
-    client.close()
-    logging.info("Demo finished ✔")
+    # meas = client.list_history_measurements(src.id)[-1]
+    # hist_df = client.fetch_history(
+    #     src.id,
+    #     meas["Id"],
+    #     [UUID(vars_[0].id)],
+    #     start_ms=meas["Start"],
+    #     end_ms=meas["End"],
+    # )
+    # head(hist_df)
+    #
 
 # ─────── ENTRY POINT ──────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    #subscribe_publish()
+    #asyncio.run(subscribe_publish())
     asyncio.run(buffer())
     #asyncio.run(history())
     #asyncio.run(cloud_test())

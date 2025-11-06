@@ -16,8 +16,11 @@ from .base import BaseDriver
 def _now_ms() -> int:
     return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
 
-def _window(start_ms: float, end_ms: float) -> tuple[float, float]:
-    return start_ms, end_ms
+def _window(start_ms: float, end_ms: float) -> tuple[int, int]:
+    to_ms = _now_ms() if end_ms == 0 else (_now_ms() + int(end_ms) if end_ms < 0 else int(end_ms))
+    frm  = to_ms + int(start_ms) if start_ms <= 0 else int(start_ms)
+    if frm >= to_ms: frm = to_ms - 1
+    return frm, to_ms
 
 def _to_frame_from_raw(rows: List[List[Any]], order_vids: Sequence[UUID]) -> pd.DataFrame:
     ts_ms  = pd.Series([int(r[0]) for r in rows], dtype="int64")
