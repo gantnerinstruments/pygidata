@@ -108,6 +108,25 @@ class GIStreamVariable(BaseModel):
         validate_by_name = True
         frozen = True
 
+class GIOnlineVariable(BaseModel):
+    id: UUID = Field(alias="Id")
+    name: str = Field(alias="Name")
+    data_type: str = Field(alias="DataFormat")
+    unit: str = Field(alias="Unit")
+    direction: str = Field(alias="Direction")  # "I" or "O"
+    index: int = Field(alias="Index")
+
+    index_in: int = Field(alias="IndexIn")
+    index_out: int = Field(alias="IndexOut")
+    precision: int = Field(alias="Precision")
+    range_min: float | None = Field(alias="RangeMin")
+    range_max: float | None = Field(alias="RangeMax")
+
+    class Config:
+        validate_by_name = True
+        frozen = True
+        extra = "ignore"
+
 
 class GIHistoryMeasurement(BaseModel):
     id: Union[UUID, int] = Field(alias="Id")

@@ -13,7 +13,7 @@ from gimodules.gi_data.mapping.models import (
     GIStream,
     GIStreamVariable,
     TimeSeries,
-    VarSelector, HistorySuccess, GIHistoryMeasurement,
+    VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable,
 )
 
 
@@ -30,11 +30,15 @@ class HTTPTimeSeriesDriver(BaseDriver):
         self._root = root.strip("/")  # “buffer”, ”history”, kafka
 
     # -------- Online -------------------------------------------------
-    async def list_variables(self) -> List[Dict[str, Any]]:
+    async def list_variables(self) -> List[GIOnlineVariable]:
         res = await self.http.get("/online/structure/variables")
-        return res.json().get("Data", [])
+        return [GIOnlineVariable.model_validate(d) for d in res.json()["Data"]]
 
-    async def read(self, var_ids: List[UUID]) -> Dict[UUID, float]:
+    async def read(self, var_ids: List[UUID] | UUID) -> Dict[UUID, float]:
+        # normalize to list
+        if isinstance(var_ids, UUID):
+            var_ids = [var_ids]
+
         payload = {"Variables": [str(v) for v in var_ids], "Function": "read"}
         res = await self.http.post("/online/data", json=payload)
         vals = res.json()["Data"]["Values"]

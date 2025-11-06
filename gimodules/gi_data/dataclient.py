@@ -17,7 +17,7 @@ from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
 from gimodules.gi_data.drivers.ws_stream  import WebSocketDriver
 from gimodules.gi_data.infra.auth         import AuthManager
 from gimodules.gi_data.infra.http         import AsyncHTTP
-from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable
+from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable
 from gimodules.gi_data.utils.logging      import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -95,7 +95,7 @@ class GIDataClient:
         self._ws_driver: Optional[WebSocketDriver] = None
 
     # --------------------------- online ------------------------------ #
-    def list_variables(self) -> List[dict]:
+    def list_variables(self) -> List[GIOnlineVariable]:
         return _run(self._drivers["buffer"].list_variables())
 
     def read_online(self, var_ids: List[UUID]) -> Dict[UUID, float]:
