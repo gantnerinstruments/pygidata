@@ -10,8 +10,10 @@ import logging
 
 from gimodules.gi_data.dataclient import GIDataClient
 from gimodules.gi_data.drivers.cloud_gql import CloudGQLDriver
+from gimodules.gi_data.mapping.enums import DataFormat, Resolution
 from gimodules.gi_data.mapping.models import VarSelector
 from gimodules.gi_data.utils.logging import setup_module_logger
+from gimodules.gi_data.mapping import *
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 
@@ -129,20 +131,26 @@ async def export_csv():
         VarSelector(SID=v.sid, VID=v.id)
         for v in variables
     ]
-    raw = client.export_csv(
+    format = DataFormat.UDBF
+    raw = client.export(
         selectors,
-        start_ms=src.last_ts - 9999,
-        end_ms=src.last_ts
+        start_ms=src.last_ts - 99999,
+        end_ms=src.last_ts, format=format,
+        resolution=Resolution.SECOND # needed only on cloud
     )
 
     # Save for debugging
-    with open("debug_exportcsv.csv", "wb") as f:
-        f.write(raw)
+    if format == DataFormat.CSV:
+        with open("debug_exportcsv.csv", "wb") as f:
+            f.write(raw)
 
-    # Convert to DataFrame
-    from io import BytesIO
-    import pandas as pd
-    df = pd.read_csv(BytesIO(raw), sep=";", decimal=",")
+        # Convert to DataFrame
+        from io import BytesIO
+        import pandas as pd
+        df = pd.read_csv(BytesIO(raw), sep=";", decimal=",")
+    if format == DataFormat.UDBF:
+        with open("debug_exportudbf.dat", "wb") as f:
+            f.write(raw)
 
 
 async def history():

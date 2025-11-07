@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union, Type
+from typing import Any, Dict, List, Optional, Tuple, Union, Type, Literal
 from uuid import UUID
 
 import nest_asyncio
@@ -17,6 +17,7 @@ from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
 from gimodules.gi_data.drivers.ws_stream  import WebSocketDriver
 from gimodules.gi_data.infra.auth         import AuthManager
 from gimodules.gi_data.infra.http         import AsyncHTTP
+from gimodules.gi_data.mapping.enums import Resolution, DataType, DataFormat
 from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
     LogSettings
 from gimodules.gi_data.utils.logging      import setup_module_logger
@@ -211,46 +212,56 @@ class GIDataClient:
         return self._kafka
 
     # --------------------------- export ------------------------------- #
-    def export_csv(
+    def export(
             self,
-            selectors: list[VarSelector],
+            selectors: List[VarSelector],
             *,
             start_ms: float,
             end_ms: float,
+            format: DataFormat,
+            points: Optional[int] = None,
             timezone: str = "UTC",
-            aggregation: str = "avg",
-            date_format: str = "%Y-%m-%dT%H:%M:%S",
+            resolution: Optional[Resolution] = None,
+            data_type: Optional[DataType] = None,
+            aggregation: Optional[str] = None,
+            date_format: Optional[str] = None,
             filename: Optional[str] = None,
-            csv_settings: Optional[CSVSettings] = None,  # only used by local_http
-    ) -> bytes:
-        drv = self._drivers["buffer"]
-        if hasattr(drv, "export_csv"):
-            return _run(drv.export_csv(
-                selectors, start_ms=start_ms, end_ms=end_ms, timezone=timezone,
-                aggregation=aggregation, date_format=date_format, filename=filename,
-                csv_settings=csv_settings  # ignored by CloudGQL
-            ))
-        raise NotImplementedError("export_csv not available on current driver")
-
-    def export_udbf(
-            self,
-            selectors: list[VarSelector],
-            *,
-            start_ms: float,
-            end_ms: float,
-            points: int = 2048,
-            timezone: str = "UTC",
-            log_settings: Optional[LogSettings] = None,
             precision: int = -1,
+            csv_settings: Optional[CSVSettings] = None,
+            log_settings: Optional[LogSettings] = None,
             target: Optional[str] = None,
     ) -> bytes:
         drv = self._drivers["buffer"]
-        if hasattr(drv, "export_udbf"):
-            return _run(drv.export_udbf(
-                selectors, start_ms=start_ms, end_ms=end_ms, points=points,
-                timezone=timezone, log_settings=log_settings, precision=precision, target=target
-            ))
-        raise NotImplementedError("export_udbf not available on current driver")
+
+        if format.value not in drv.supported_exports():
+            raise NotImplementedError(f"{drv.name} does not support {format.value}")
+
+        return _run(
+            drv.export(
+                selectors,
+                start_ms=start_ms,
+                end_ms=end_ms,
+                format=format.value,
+                points=points,
+                timezone=timezone,
+                resolution=resolution.value if resolution else None,
+                data_type=data_type.value if data_type else None,
+                aggregation=aggregation,
+                date_format=date_format,
+                filename=filename,
+                precision=precision,
+                csv_settings=csv_settings,
+                log_settings=log_settings,
+                target=target,
+            )
+        )
+
+    # convenience
+    def export_csv(self, selectors, *, start_ms, end_ms, **kw) -> bytes:
+        return self.export(selectors, start_ms=start_ms, end_ms=end_ms, format="csv", **kw)
+
+    def export_udbf(self, selectors, *, start_ms, end_ms, **kw) -> bytes:
+        return self.export(selectors, start_ms=start_ms, end_ms=end_ms, format="udbf", **kw)
 
     # --------------------------- import ------------------------------- #
     def import_csv(

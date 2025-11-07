@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import abc
-from typing import AsyncIterator, Dict, List
+from typing import AsyncIterator, Dict, List, Literal, Optional
 from uuid import UUID
 
 import pandas as pd
+
+from gimodules.gi_data.mapping.models import LogSettings, CSVSettings, VarSelector
+
+
 
 
 class BaseDriver(abc.ABC):
@@ -69,3 +73,30 @@ class BaseDriver(abc.ABC):
         simply raise `NotImplementedError`.
         """
         raise NotImplementedError
+
+    async def export(
+        self,
+        selectors: List["VarSelector"],
+        *,
+        start_ms: float,
+        end_ms: float,
+        format: Literal["csv","udbf"],
+        points: Optional[int] = None,
+        timezone: str = "UTC",
+        aggregation: Optional[str] = None,
+        date_format: Optional[str] = None,
+        filename: Optional[str] = None,
+        precision: int = -1,
+        csv_settings: Optional["CSVSettings"] = None,
+        log_settings: Optional["LogSettings"] = None,
+        target: Optional[str] = None,
+    ) -> bytes:
+        raise NotImplementedError
+
+    def supported_exports(self) -> set[str]:
+        return {"csv", "udbf"}
+
+    def import_csv(self, source_id, source_name, file_bytes, csv_settings, add_time_series, retention_time_sec,
+                   time_offset_sec, sample_rate, auto_create_metadata, session_timeout_sec):
+        pass
+

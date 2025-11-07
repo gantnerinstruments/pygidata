@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio, math
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Sequence, Tuple, Union, Optional
+from typing import Any, Dict, List, Sequence, Tuple, Union, Optional, Literal
 from uuid import UUID
 import pandas as pd
 
@@ -12,6 +12,8 @@ from gimodules.gi_data.mapping.models import (
     GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, BufferSuccess, LogSettings, CSVSettings
 )
 from .base import BaseDriver
+from ..mapping.enums import Resolution
+
 
 def _now_ms() -> int:
     return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
@@ -221,66 +223,58 @@ class CloudGQLDriver(BaseDriver):
                 }
         return meta
 
-    async def export_csv(
-        self,
-        selectors: List[VarSelector],
-        *,
-        start_ms: float,
-        end_ms: float,
+    async def export(  # csv via GQL exportCSV, udbf via /history/data
+        self, selectors: List[VarSelector], *,
+        start_ms: float, end_ms: float,
+        format: Literal["csv","udbf"],
+        points: Optional[int] = 2048,
         timezone: str = "UTC",
-        aggregation: str = "avg",
-        date_format: str = "%Y-%m-%dT%H:%M:%S",
+        resolution: Optional[Resolution] = None,
+        data_type: Optional[DataType] = None, # ignored on cloud
+        aggregation: Optional[str] = "avg",
+        date_format: Optional[str] = "%Y-%m-%dT%H:%M:%S",
         filename: Optional[str] = None,
-        csv_settings: Optional[CSVSettings] = None,
+        precision: int = -1,
+        csv_settings: Optional[CSVSettings] = None,  # ignored on cloud
+        log_settings: Optional[LogSettings] = None,
+        target: Optional[str] = None,                # ignored on cloud
     ) -> bytes:
         frm, to = _window(start_ms, end_ms)
-        by_sid: Dict[str, List[UUID]] = {}
-        for s in selectors:
-            sid = str(s.SID)
-            by_sid.setdefault(sid, []).append(UUID(str(s.VID)))
-
-        chunks: List[str] = []
-        for sid, vids in by_sid.items():
-            fields = await self._vid_to_fieldnames(sid, vids)
-            meta   = await self._var_meta(sid)
-            sname  = await self._stream_name(sid)
-
-            for vid, field in zip(vids, fields):
-                vmeta = meta.get(str(vid), {"name": str(vid), "unit": ""})
-                header = '", "'.join([
-                    vmeta["name"], sname, aggregation, vmeta["unit"]  # 4-row CSV header
-                ])
-                chunks.append(
-                    '{ field: "%s:%s.%s", headers: ["%s"] }' %
-                    (sid, field, aggregation, header)
-                )
-
-        cols = ",\n          ".join([
-            '{ field: "ts", headers: ["datetime"], dateFormat: "%s" }' % date_format,
-            '{ field: "ts", headers: ["time", "", "", "[s since 01.01.1970]"] }',
-            *chunks,
-        ])
-        fname = filename or "export_%d_%d.csv" % (frm, to)
-
-        q = f"""
-        {{
-          exportCSV(
-            from: {frm},
-            to: {to},
-            resolution: SECOND,
-            timezone: "{timezone}",
-            filename: "{fname}",
-            columns: [
-              {cols}
-            ]
-          ) {{ file }}
-        }}
-        """
-
+        if format == "csv":
+            by_sid: Dict[str, List[UUID]] = {}
+            for s in selectors:
+                by_sid.setdefault(str(s.SID), []).append(UUID(str(s.VID)))
+            chunks = []
+            for sid, vids in by_sid.items():
+                fields = await self._vid_to_fieldnames(sid, vids)
+                meta   = await self._var_meta(sid)
+                sname  = await self._stream_name(sid)
+                for vid, f in zip(vids, fields):
+                    m = meta.get(str(vid), {"name": str(vid), "unit": ""})
+                    hdr = '", "'.join([m["name"], sname, aggregation or "avg", m["unit"]])
+                    chunks.append('{ field: "%s:%s.%s", headers: ["%s"] }' % (sid, f, aggregation or "avg", hdr))
+            cols = ",\n          ".join([
+                '{ field: "ts", headers: ["datetime"], dateFormat: "%s" }' % (date_format or "%Y-%m-%dT%H:%M:%S"),
+                '{ field: "ts", headers: ["time", "", "", "[s since 01.01.1970]"] }',
+                *chunks,
+            ])
+            fname = filename or f"export_{frm}_{to}.csv"
+            q = f"""{{ exportCSV(from:{frm}, to:{to}, resolution: {resolution}, timezone:"{timezone}",
+                        filename:"{fname}", columns:[ {cols} ]) {{ file }} }}"""
+            await self._bearer()
+            res = await self.http.post("/__api__/gql", json={"query": q})
+            return res.content
+        # udbf
+        req = BufferRequest(
+            Start=frm, End=to, Variables=selectors, Points=points or 2048,
+            Type="equidistant", Format="udbf", Precision=precision,
+            TimeZone=timezone, TimeOffset=0
+        ).model_dump(by_alias=True, mode="json")
+        if log_settings:
+            req["LogSettings"] = log_settings.model_dump(exclude_none=True)
         await self._bearer()
-        res = await self.http.post("/__api__/gql", json={"query": q})
-        # Servers commonly stream CSV; some return bytes in body. We return the raw payload.
-        return res.content
+        r = await self.http.post("/history/data", json=req)
+        return r.content
 
     async def export_udbf(
         self,

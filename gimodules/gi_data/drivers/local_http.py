@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Tuple, Union, Optional, Literal
 from uuid import UUID
 
 import pandas as pd
@@ -15,6 +15,7 @@ from gimodules.gi_data.mapping.models import (
     TimeSeries,
     VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable, CSVSettings, LogSettings,
 )
+from ..mapping.enums import Resolution, DataType
 
 
 class HTTPTimeSeriesDriver(BaseDriver):
@@ -94,51 +95,32 @@ class HTTPTimeSeriesDriver(BaseDriver):
 
         return _to_frame(ts, [UUID(str(v.VID)) for v in vars_])
 
-    async def export_csv(
-        self,
-        selectors: List[VarSelector],
-        *,
-        start_ms: float,
-        end_ms: float,
-        points: int = 2048,
+    async def export(  # maps to /{root}/data
+        self, selectors: List[VarSelector], *,
+        start_ms: float, end_ms: float,
+        format: Literal["csv","udbf"],
+        points: Optional[int] = 2048,
         timezone: str = "UTC",
+        resolution: Optional[Resolution] = None,# ignored
+        data_type: Optional[DataType] = None,# ignored
+        aggregation: Optional[str] = None,   # ignored
+        date_format: Optional[str] = None,   # ignored
+        filename: Optional[str] = None,      # ignored
+        precision: int = -1,
         csv_settings: Optional[CSVSettings] = None,
-        precision: int = -1,
-        aggregation: Optional[str] = None,  # ignored to match signature
-        date_format: Optional[str] = None,  # ignored to match signature
-        filename: Optional[str] = None,  # ignored to match signature
-    ) -> bytes:
-        req = BufferRequest(
-            Start=start_ms, End=end_ms, Variables=selectors, Points=points,
-            Type="equidistant", Format="csv", Precision=precision,
-            TimeZone=timezone, TimeOffset=0
-        ).model_dump(by_alias=True, mode="json")
-        if csv_settings:
-            req["CSVSettings"] = csv_settings.model_dump(exclude_none=True)
-        r = await self.http.post(f"/{self._root}/data", json=req)
-        return r.content
-
-    async def export_udbf(
-        self,
-        selectors: List[VarSelector],
-        *,
-        start_ms: float,
-        end_ms: float,
-        points: int = 2048,
-        timezone: str = "UTC",
         log_settings: Optional[LogSettings] = None,
-        precision: int = -1,
-        target: Optional[str] = None,  # "file" | "record"
-        aggregation: Optional[str] = None, # ignored
+        target: Optional[str] = None,        # local-only for csv -> "stream"/"record"
     ) -> bytes:
+        fmt = "csv" if format == "csv" else "udbf"
         req = BufferRequest(
-            Start=start_ms, End=end_ms, Variables=selectors, Points=points,
-            Type="equidistant", Format="udbf", Precision=precision,
-            TimeZone=timezone, TimeOffset=0
+            Start=start_ms, End=end_ms, Variables=selectors, Points=points or 2048,
+            Type="equidistant", Format=fmt, Precision=precision, TimeZone=timezone, TimeOffset=0
         ).model_dump(by_alias=True, mode="json")
-        if log_settings:
+        if fmt == "csv" and csv_settings:
+            req["CSVSettings"] = csv_settings.model_dump(exclude_none=True)
+        if fmt == "udbf" and log_settings:
             req["LogSettings"] = log_settings.model_dump(exclude_none=True)
-        if target:
+        if fmt == "udbf" and target:
             req["Target"] = target
         r = await self.http.post(f"/{self._root}/data", json=req)
         return r.content
