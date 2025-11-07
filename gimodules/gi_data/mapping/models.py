@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -136,3 +136,24 @@ class GIHistoryMeasurement(BaseModel):
 
     # keep any extra keys we don’t care about
     model_config = dict(validate_by_name=True, frozen=True, extra="ignore")
+
+class CSVSettings(BaseModel):
+    HeaderText: Optional[str] = None
+    AddColumnHeader: bool = True
+    DateTimeHeader: str = "datetime"
+    DateTimeFormat: str = "%Y-%m-%dT%H:%M:%S"
+    ColumnSeparator: str = ";"
+    DecimalSeparator: str = "."
+    NameRowIndex: Optional[int] = None
+    UnitRowIndex: Optional[int] = None
+    ValuesStartRowIndex: Optional[int] = None
+    ValuesStartColumnIndex: Optional[int] = None
+
+    model_config = dict(validate_by_name=True, frozen=True)
+
+class LogSettings(BaseModel):
+    SourceID: str
+    SourceName: str
+    MeasurementName: Optional[str] = None
+
+    model_config = dict(validate_by_name=True, frozen=True)

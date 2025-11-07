@@ -17,7 +17,8 @@ from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
 from gimodules.gi_data.drivers.ws_stream  import WebSocketDriver
 from gimodules.gi_data.infra.auth         import AuthManager
 from gimodules.gi_data.infra.http         import AsyncHTTP
-from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector
+from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
+    LogSettings
 from gimodules.gi_data.utils.logging      import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -208,6 +209,90 @@ class GIDataClient:
             from gimodules.gi_data.drivers.kafka_stream import KafkaStreamDriver
             self._kafka = KafkaStreamDriver(self._auth, self._http)
         return self._kafka
+
+    # --------------------------- export ------------------------------- #
+    def export_csv(
+            self,
+            selectors: list[VarSelector],
+            *,
+            start_ms: float,
+            end_ms: float,
+            timezone: str = "UTC",
+            aggregation: str = "avg",
+            date_format: str = "%Y-%m-%dT%H:%M:%S",
+            filename: Optional[str] = None,
+            csv_settings: Optional[CSVSettings] = None,  # only used by local_http
+    ) -> bytes:
+        drv = self._drivers["buffer"]
+        if hasattr(drv, "export_csv"):
+            return _run(drv.export_csv(
+                selectors, start_ms=start_ms, end_ms=end_ms, timezone=timezone,
+                aggregation=aggregation, date_format=date_format, filename=filename,
+                csv_settings=csv_settings  # ignored by CloudGQL
+            ))
+        raise NotImplementedError("export_csv not available on current driver")
+
+    def export_udbf(
+            self,
+            selectors: list[VarSelector],
+            *,
+            start_ms: float,
+            end_ms: float,
+            points: int = 2048,
+            timezone: str = "UTC",
+            log_settings: Optional[LogSettings] = None,
+            precision: int = -1,
+            target: Optional[str] = None,
+    ) -> bytes:
+        drv = self._drivers["buffer"]
+        if hasattr(drv, "export_udbf"):
+            return _run(drv.export_udbf(
+                selectors, start_ms=start_ms, end_ms=end_ms, points=points,
+                timezone=timezone, log_settings=log_settings, precision=precision, target=target
+            ))
+        raise NotImplementedError("export_udbf not available on current driver")
+
+    # --------------------------- import ------------------------------- #
+    def import_csv(
+            self,
+            source_id: str,
+            source_name: str,
+            file_bytes: bytes,
+            *,
+            csv_settings: Optional[CSVSettings] = None,
+            add_time_series: bool = False,
+            retention_time_sec: int = 0,
+            time_offset_sec: int = 0,
+            sample_rate: int = -1,
+            auto_create_metadata: bool = True,
+            session_timeout_sec: int = 300,
+    ) -> str:
+        drv = self._drivers["history"]
+        return _run(drv.import_csv(
+            source_id, source_name, file_bytes,
+            csv_settings=csv_settings, add_time_series=add_time_series,
+            retention_time_sec=retention_time_sec, time_offset_sec=time_offset_sec,
+            sample_rate=sample_rate, auto_create_metadata=auto_create_metadata,
+            session_timeout_sec=session_timeout_sec,
+        ))
+
+    def import_udbf(
+            self,
+            source_id: str,
+            source_name: str,
+            file_bytes: bytes,
+            *,
+            add_time_series: bool = False,
+            sample_rate: int = -1,
+            auto_create_metadata: bool = True,
+            session_timeout_sec: int = 300,
+    ) -> str:
+        drv = self._drivers["history"]
+        return _run(drv.import_udbf(
+            source_id, source_name, file_bytes,
+            add_time_series=add_time_series, sample_rate=sample_rate,
+            auto_create_metadata=auto_create_metadata, session_timeout_sec=session_timeout_sec,
+        ))
 
     # ------------------------ housekeeping --------------------------- #
     def close(self) -> None:

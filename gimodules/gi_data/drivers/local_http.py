@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 from uuid import UUID
 
 import pandas as pd
@@ -13,7 +13,7 @@ from gimodules.gi_data.mapping.models import (
     GIStream,
     GIStreamVariable,
     TimeSeries,
-    VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable,
+    VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable, CSVSettings, LogSettings,
 )
 
 
@@ -94,6 +94,116 @@ class HTTPTimeSeriesDriver(BaseDriver):
 
         return _to_frame(ts, [UUID(str(v.VID)) for v in vars_])
 
+    async def export_csv(
+        self,
+        selectors: List[VarSelector],
+        *,
+        start_ms: float,
+        end_ms: float,
+        points: int = 2048,
+        timezone: str = "UTC",
+        csv_settings: Optional[CSVSettings] = None,
+        precision: int = -1,
+        aggregation: Optional[str] = None,  # ignored to match signature
+        date_format: Optional[str] = None,  # ignored to match signature
+        filename: Optional[str] = None,  # ignored to match signature
+    ) -> bytes:
+        req = BufferRequest(
+            Start=start_ms, End=end_ms, Variables=selectors, Points=points,
+            Type="equidistant", Format="csv", Precision=precision,
+            TimeZone=timezone, TimeOffset=0
+        ).model_dump(by_alias=True, mode="json")
+        if csv_settings:
+            req["CSVSettings"] = csv_settings.model_dump(exclude_none=True)
+        r = await self.http.post(f"/{self._root}/data", json=req)
+        return r.content
+
+    async def export_udbf(
+        self,
+        selectors: List[VarSelector],
+        *,
+        start_ms: float,
+        end_ms: float,
+        points: int = 2048,
+        timezone: str = "UTC",
+        log_settings: Optional[LogSettings] = None,
+        precision: int = -1,
+        target: Optional[str] = None,  # "file" | "record"
+        aggregation: Optional[str] = None, # ignored
+    ) -> bytes:
+        req = BufferRequest(
+            Start=start_ms, End=end_ms, Variables=selectors, Points=points,
+            Type="equidistant", Format="udbf", Precision=precision,
+            TimeZone=timezone, TimeOffset=0
+        ).model_dump(by_alias=True, mode="json")
+        if log_settings:
+            req["LogSettings"] = log_settings.model_dump(exclude_none=True)
+        if target:
+            req["Target"] = target
+        r = await self.http.post(f"/{self._root}/data", json=req)
+        return r.content
+
+    async def import_csv(
+        self,
+        source_id: str,
+        source_name: str,
+        file_bytes: bytes,
+        *,
+        csv_settings: Optional[CSVSettings] = None,
+        add_time_series: bool = False,
+        retention_time_sec: int = 0,
+        time_offset_sec: int = 0,
+        sample_rate: int = -1,
+        auto_create_metadata: bool = True,
+        session_timeout_sec: int = 300,
+    ) -> str:
+        param = {
+            "Type": "csv",
+            "SourceID": source_id,
+            "SourceName": source_name,
+            "SessionTimeoutSec": str(session_timeout_sec),
+            "SampleRate": str(sample_rate),
+            "AutoCreateMetaData": str(auto_create_metadata).lower(),
+            "CSVSettings": (csv_settings.model_dump(exclude_none=True) if csv_settings else {}),
+            "RetentionTimeSec": retention_time_sec,
+            "Target": "stream",
+            "TimeOffsetSec": time_offset_sec,
+            "AddTimeSeries": add_time_series,
+        }
+        res = await self.http.post("/history/data/import", json=param)
+        sid = res.json()["Data"]["SessionID"]
+        await self.http.post(f"/history/data/import/{sid}", data=file_bytes,
+                             headers={"Content-Type": "text/csv"})
+        await self.http.delete(f"/history/data/import/{sid}")
+        return str(sid)
+
+    async def import_udbf(
+        self,
+        source_id: str,
+        source_name: str,
+        file_bytes: bytes,
+        *,
+        add_time_series: bool = False,
+        sample_rate: int = -1,
+        auto_create_metadata: bool = True,
+        session_timeout_sec: int = 300,
+    ) -> str:
+        param = {
+            "Type": "udbf",
+            "SourceID": source_id,
+            "SourceName": source_name,
+            "MeasID": "",
+            "SessionTimeoutSec": str(session_timeout_sec),
+            "AddTimeSeries": str(add_time_series).lower(),
+            "SampleRate": str(sample_rate),
+            "AutoCreateMetaData": str(auto_create_metadata).lower(),
+        }
+        res = await self.http.post("/history/data/import", json=param)
+        sid = res.json()["Data"]["SessionID"]
+        await self.http.post(f"/history/data/import/{sid}", data=file_bytes,
+                             headers={"Content-Type": "application/octet-stream"})
+        await self.http.delete(f"/history/data/import/{sid}")
+        return str(sid)
 
 def _to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
     start_ns = int(ts.Start * 1_000_000)

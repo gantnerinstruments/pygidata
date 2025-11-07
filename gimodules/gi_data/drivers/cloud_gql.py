@@ -4,12 +4,12 @@ from __future__ import annotations
 import asyncio, math
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union, Optional
 from uuid import UUID
 import pandas as pd
 
 from gimodules.gi_data.mapping.models import (
-    GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, BufferSuccess
+    GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, BufferSuccess, LogSettings, CSVSettings
 )
 from .base import BaseDriver
 
@@ -197,3 +197,181 @@ class CloudGQLDriver(BaseDriver):
         r = await self.http.post("/history/data", json=req.model_dump(by_alias=True, mode="json"))
         ts = BufferSuccess.model_validate(r.json()).first_timeseries()
         return _to_frame_from_ts(ts, var_ids)
+
+
+    async def _stream_name(self, sid: Union[str, UUID, int]) -> str:
+        s = str(sid)
+        r = await self.http.get("/kafka/structure/sources")
+        for src in r.json().get("Data", []):
+            if str(src.get("Id")) == s:
+                return src.get("Name", s)
+        return s
+
+    async def _var_meta(self, sid: Union[str, UUID, int]) -> Dict[str, Dict[str, Any]]:
+        body = {"AddVarMapping": True, "Sources": [str(sid)]}
+        r = await self.http.post("/kafka/structure/sources", json=body)
+        meta: Dict[str, Dict[str, Any]] = {}
+        for src in r.json().get("Data", []):
+            for v in src.get("Variables", []):
+                vid = str(v["Id"])
+                meta[vid] = {
+                    "name": v.get("Name", vid),
+                    "unit": v.get("Unit", ""),
+                    "gql": v.get("GQLId"),
+                }
+        return meta
+
+    async def export_csv(
+        self,
+        selectors: List[VarSelector],
+        *,
+        start_ms: float,
+        end_ms: float,
+        timezone: str = "UTC",
+        aggregation: str = "avg",
+        date_format: str = "%Y-%m-%dT%H:%M:%S",
+        filename: Optional[str] = None,
+        csv_settings: Optional[CSVSettings] = None,
+    ) -> bytes:
+        frm, to = _window(start_ms, end_ms)
+        by_sid: Dict[str, List[UUID]] = {}
+        for s in selectors:
+            sid = str(s.SID)
+            by_sid.setdefault(sid, []).append(UUID(str(s.VID)))
+
+        chunks: List[str] = []
+        for sid, vids in by_sid.items():
+            fields = await self._vid_to_fieldnames(sid, vids)
+            meta   = await self._var_meta(sid)
+            sname  = await self._stream_name(sid)
+
+            for vid, field in zip(vids, fields):
+                vmeta = meta.get(str(vid), {"name": str(vid), "unit": ""})
+                header = '", "'.join([
+                    vmeta["name"], sname, aggregation, vmeta["unit"]  # 4-row CSV header
+                ])
+                chunks.append(
+                    '{ field: "%s:%s.%s", headers: ["%s"] }' %
+                    (sid, field, aggregation, header)
+                )
+
+        cols = ",\n          ".join([
+            '{ field: "ts", headers: ["datetime"], dateFormat: "%s" }' % date_format,
+            '{ field: "ts", headers: ["time", "", "", "[s since 01.01.1970]"] }',
+            *chunks,
+        ])
+        fname = filename or "export_%d_%d.csv" % (frm, to)
+
+        q = f"""
+        {{
+          exportCSV(
+            from: {frm},
+            to: {to},
+            resolution: SECOND,
+            timezone: "{timezone}",
+            filename: "{fname}",
+            columns: [
+              {cols}
+            ]
+          ) {{ file }}
+        }}
+        """
+
+        await self._bearer()
+        res = await self.http.post("/__api__/gql", json={"query": q})
+        # Servers commonly stream CSV; some return bytes in body. We return the raw payload.
+        return res.content
+
+    async def export_udbf(
+        self,
+        selectors: List[VarSelector],
+        *,
+        start_ms: float,
+        end_ms: float,
+        points: int = 0,
+        log_settings: Optional[LogSettings] = None,
+        target: Optional[str] = None,
+        timezone: str = "UTC",
+        precision: int = -1,
+    ) -> bytes:
+        frm, to = _window(start_ms, end_ms)
+        req = BufferRequest(
+            Start=frm, End=to, Variables=selectors, Points=points or 2048,
+            Type="equidistant", Format="udbf", Precision=precision,
+            TimeZone=timezone, TimeOffset=0
+        ).model_dump(by_alias=True, mode="json")
+
+        if log_settings:
+            req["LogSettings"] = log_settings.model_dump(exclude_none=True)
+        if target:
+            req["Target"] = target
+
+        await self._bearer()
+        r = await self.http.post("/buffer/data", json=req)
+        return r.content
+
+    async def import_csv(
+        self,
+        source_id: str,
+        source_name: str,
+        file_bytes: bytes,
+        *,
+        csv_settings: Optional[CSVSettings] = None,
+        add_time_series: bool = False,
+        retention_time_sec: int = 0,
+        time_offset_sec: int = 0,
+        sample_rate: int = -1,
+        auto_create_metadata: bool = True,
+        session_timeout_sec: int = 300,
+    ) -> str:
+        param = {
+            "Type": "csv",
+            "SourceID": source_id,
+            "SourceName": source_name,
+            "SessionTimeoutSec": str(session_timeout_sec),
+            "SampleRate": str(sample_rate),
+            "AutoCreateMetaData": str(auto_create_metadata).lower(),
+            "CSVSettings": (csv_settings.model_dump(exclude_none=True) if csv_settings else {}),
+            "RetentionTimeSec": retention_time_sec,
+            "Target": "stream",
+            "TimeOffsetSec": time_offset_sec,
+            "AddTimeSeries": add_time_series,
+        }
+        await self._bearer()
+        res = await self.http.post("/history/data/import", json=param)
+        sid = res.json()["Data"]["SessionID"]
+
+        hdrs = {"Content-Type": "text/csv"}
+        await self.http.post(f"/history/data/import/{sid}", data=file_bytes, headers=hdrs)
+        await self.http.delete(f"/history/data/import/{sid}")
+        return str(sid)
+
+    async def import_udbf(
+        self,
+        source_id: str,
+        source_name: str,
+        file_bytes: bytes,
+        *,
+        add_time_series: bool = False,
+        sample_rate: int = -1,
+        auto_create_metadata: bool = True,
+        session_timeout_sec: int = 300,
+    ) -> str:
+        param = {
+            "Type": "udbf",
+            "SourceID": source_id,
+            "SourceName": source_name,
+            "MeasID": "",
+            "SessionTimeoutSec": str(session_timeout_sec),
+            "AddTimeSeries": str(add_time_series).lower(),
+            "SampleRate": str(sample_rate),
+            "AutoCreateMetaData": str(auto_create_metadata).lower(),
+        }
+        await self._bearer()
+        res = await self.http.post("/history/data/import", json=param)
+        sid = res.json()["Data"]["SessionID"]
+
+        hdrs = {"Content-Type": "application/octet-stream"}
+        await self.http.post(f"/history/data/import/{sid}", data=file_bytes, headers=hdrs)
+        await self.http.delete(f"/history/data/import/{sid}")
+        return str(sid)

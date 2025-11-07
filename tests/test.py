@@ -10,6 +10,7 @@ import logging
 
 from gimodules.gi_data.dataclient import GIDataClient
 from gimodules.gi_data.drivers.cloud_gql import CloudGQLDriver
+from gimodules.gi_data.mapping.models import VarSelector
 from gimodules.gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -25,6 +26,10 @@ CONFIGS = {
     },
     "qstation": {
         "base": "http://10.1.50.36:8090",
+        "auth": {"username": "admin", "password": "admin"}
+    },
+    "bench": {
+        "base": "http://127.0.0.1:8090",
         "auth": {"username": "admin", "password": "admin"}
     },
     "cloud": {
@@ -67,8 +72,11 @@ async def online():
     src = client.list_buffer_sources()[0]
     logger.info("Selected src: {}".format(src))
 
-    vars = client.list_stream_variables(src.id)[:1]
-    selectors = [(v.sid, v.id) for v in vars]
+    variables = client.list_stream_variables(src.id)[:1]
+    selectors: List[VarSelector] = [
+        VarSelector(SID=v.sid, VID=v.id)
+        for v in variables
+    ]
     logger.info(f"Selected variables: {selectors}")
 
     for i in range(0, 2):
@@ -79,15 +87,20 @@ async def online():
         df.to_csv("debug_output.csv")
 
 async def buffer():
-    client = get_client(CONFIGS["cloud"])
+    client = get_client(CONFIGS["qstation"])
 
     buffers = client.list_buffer_sources()
     #src = next((s for s in buffers if s.name == "demo_otf4"), None)
     src = buffers[0]
     logger.info(f"Selected Buffer source: {src}")
 
-    vars = client.list_stream_variables(src.id)[:1]
-    selectors = [(v.sid, v.id) for v in vars]
+    variables = client.list_stream_variables(src.id)[:99]
+
+    selectors: List[VarSelector] = [
+        VarSelector(SID=v.sid, VID=v.id)
+        for v in variables
+    ]
+
     logger.info(f"Selected variables: {selectors}")
 
     for i in range(0, 1):
@@ -101,13 +114,44 @@ async def buffer():
         time.sleep(1)
         df.to_csv("debug_output.csv")
 
+async def export_csv():
+    client = get_client(CONFIGS["qstation"])
+    buffers = client.list_buffer_sources()
+    #src = next((s for s in buffers if s.name == "demo_otf4"), None)
+    src = buffers[0]
+
+
+    logger.info(f"Selected Buffer source: {src}")
+
+    variables = client.list_stream_variables(src.id)[:99]
+
+    selectors: List[VarSelector] = [
+        VarSelector(SID=v.sid, VID=v.id)
+        for v in variables
+    ]
+    raw = client.export_csv(
+        selectors,
+        start_ms=src.last_ts - 9999,
+        end_ms=src.last_ts
+    )
+
+    # Save for debugging
+    with open("debug_exportcsv.csv", "wb") as f:
+        f.write(raw)
+
+    # Convert to DataFrame
+    from io import BytesIO
+    import pandas as pd
+    df = pd.read_csv(BytesIO(raw), sep=";", decimal=",")
+
+
 async def history():
     #BASE = "http://10.1.50.36:8090"
-    BASE = "http://qcore-111004:8090"  # records
-    client = GIDataClient(BASE, username="admin", password="admin")
+    client = get_client(CONFIGS["qcore"])
 
     src = client.list_history_sources()[0]
     logger.info(f"Selected Buffer source: {src}")
+
     meas = client.list_history_measurements(src.id)[-1]
     logger.info(f"Selected Measurement : {meas}")
 
@@ -187,8 +231,10 @@ async def cloud_test() -> None:
 
 if __name__ == '__main__':
     #asyncio.run(subscribe_publish())
-    asyncio.run(buffer())
+    #asyncio.run(buffer())
+
     #asyncio.run(history())
     #asyncio.run(cloud_test())
     #stream_kafka_test()
     #asyncio.run(online())
+    asyncio.run(export_csv())
