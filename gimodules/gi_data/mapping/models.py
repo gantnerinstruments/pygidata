@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 class VarSelector(BaseModel):
     SID: Union[UUID, str, int] | None = None
-    VID: UUID
+    VID: UUID | str
     Selector: str = Field(default="latest") # latest=buffer | or measurement ID
 
     class Config:

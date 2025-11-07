@@ -81,7 +81,7 @@ class HTTPTimeSeriesDriver(BaseDriver):
             end_ms: float,
             points: int = 2048,
     ) -> pd.DataFrame:
-        vars_ = [VarSelector(SID=s, VID=v) for s, v in selectors]
+        vars_ = [s for s in selectors]
         req = BufferRequest(Start=start_ms, End=end_ms, Points=points, Variables=vars_)
 
         res = await self.http.post(f"/{self._root}/data",

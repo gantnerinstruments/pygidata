@@ -145,7 +145,7 @@ class CloudGQLDriver(BaseDriver):
 
     async def fetch_buffer(
         self,
-        selectors: List[Tuple[Union[UUID, str, int], UUID]],
+        selectors: List[VarSelector],
         *,
         start_ms: float = -20_000,
         end_ms: float = 0,
@@ -153,8 +153,8 @@ class CloudGQLDriver(BaseDriver):
     ) -> pd.DataFrame:
         frm, to = _window(start_ms, end_ms)
         by_sid: Dict[str, List[UUID]] = defaultdict(list)
-        for sid, vid in selectors:
-            by_sid[str(sid)].append(UUID(str(vid)))
+        for selector in selectors:
+            by_sid[str(selector.SID)].append(selector.VID)
 
         frames: List[pd.DataFrame] = []
         for sid, vids in by_sid.items():

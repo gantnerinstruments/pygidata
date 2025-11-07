@@ -17,7 +17,7 @@ from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
 from gimodules.gi_data.drivers.ws_stream  import WebSocketDriver
 from gimodules.gi_data.infra.auth         import AuthManager
 from gimodules.gi_data.infra.http         import AsyncHTTP
-from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable
+from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector
 from gimodules.gi_data.utils.logging      import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -113,7 +113,7 @@ class GIDataClient:
 
     def fetch_buffer(
         self,
-        selectors: List[Tuple[Union[UUID, int], UUID]],
+        selectors: List[VarSelector],
         *,
         start_ms: float = -20_000,
         end_ms:   float = 0,
@@ -148,7 +148,7 @@ class GIDataClient:
     ) -> pd.DataFrame:
         sels = [(source_id, vid) for vid in var_ids]
         return _run(
-            self._drivers["history"].fetch(
+            self._drivers["history"].fetch_history(
                 sels, start_ms=start_ms, end_ms=end_ms, points=points
             )
         )
