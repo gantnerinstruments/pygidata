@@ -75,7 +75,7 @@ class HTTPTimeSeriesDriver(BaseDriver):
     # -------- Data ---------------------------------------------------
     async def fetch_buffer(
             self,
-            selectors: List[Tuple[Union[str, int, UUID], UUID]],
+            selectors: List[VarSelector],
             *,
             start_ms: float,
             end_ms: float,
