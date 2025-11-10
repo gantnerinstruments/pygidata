@@ -23,7 +23,7 @@ from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlin
 from gimodules.gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
-
+PACKAGE_PREFIX = "gimodules.gi_data"
 # ------------------------------------------------------------------ #
 # helpers                                                            #
 # ------------------------------------------------------------------ #
@@ -357,3 +357,13 @@ class GIDataClient:
     def __exit__(self, exc_type, exc, tb) -> bool:
         self.close()
         return False
+
+    @staticmethod
+    def set_log_level(level: int):
+        root = logging.getLogger(PACKAGE_PREFIX)
+        root.setLevel(level)  # affects children that don't explicitly override
+
+        # ensure already-created module loggers are updated, too
+        for name, lg in logging.root.manager.loggerDict.items():
+            if isinstance(lg, logging.Logger) and name.startswith(PACKAGE_PREFIX):
+                lg.setLevel(level)

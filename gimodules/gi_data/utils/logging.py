@@ -24,3 +24,12 @@ def setup_module_logger(name: str, level: int = logging.INFO) -> logging.Logger:
         logger.addHandler(handler)
 
     return logger
+
+def set_global_log_level(level: int):
+    """
+    Change level of all configured loggers (including existing module loggers).
+    """
+    logging.getLogger().setLevel(level)  # root logger
+    for name, logger in logging.root.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger):
+            logger.setLevel(level)
