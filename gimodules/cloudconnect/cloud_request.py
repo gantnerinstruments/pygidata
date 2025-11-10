@@ -15,6 +15,7 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Any, Type, cast, Tuple
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -209,6 +210,13 @@ class CloudRequest:
         self.import_session_csv_current: Optional[dict] = None
         self.session_ID = None
         self.csv_config = CsvConfig()
+
+        warnings.warn(
+            "CloudRequest (cloudconnect) is deprecated and will be removed in a future release. "
+            "Use GIDataClient (gi_data/dataclient.py) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     def login(
             self,
