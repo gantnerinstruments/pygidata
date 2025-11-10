@@ -74,7 +74,7 @@ class BaseDriver(abc.ABC):
         """
         raise NotImplementedError
 
-    async def export(
+    async def export_data(
         self,
         selectors: List["VarSelector"],
         *,
@@ -96,7 +96,14 @@ class BaseDriver(abc.ABC):
     def supported_exports(self) -> set[str]:
         return {"csv", "udbf"}
 
-    def import_csv(self, source_id, source_name, file_bytes, csv_settings, add_time_series, retention_time_sec,
+    def import_csv(self, source_id, source_name, file_bytes, target, csv_settings, add_time_series, retention_time_sec,
                    time_offset_sec, sample_rate, auto_create_metadata, session_timeout_sec):
         pass
 
+    def import_udbf(self, source_id, source_name, file_bytes, target, add_time_series, sample_rate,
+                    auto_create_metadata, session_timeout_sec):
+        pass
+
+    def export(self, selectors, start_ms, end_ms, format, points, timezone, resolution, data_type, aggregation,
+               date_format, filename, precision, csv_settings, log_settings, target):
+        pass

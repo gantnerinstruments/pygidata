@@ -141,7 +141,7 @@ class CSVSettings(BaseModel):
     HeaderText: Optional[str] = None
     AddColumnHeader: bool = True
     DateTimeHeader: str = "datetime"
-    DateTimeFormat: str = "%Y-%m-%dT%H:%M:%S"
+    DateTimeFormat: str = "%Y-%m-%d %H:%M:%S.%%0us"
     ColumnSeparator: str = ";"
     DecimalSeparator: str = "."
     NameRowIndex: Optional[int] = None
@@ -150,6 +150,26 @@ class CSVSettings(BaseModel):
     ValuesStartColumnIndex: Optional[int] = None
 
     model_config = dict(validate_by_name=True, frozen=True)
+
+class CSVImportSettings(BaseModel):
+    ColumnSeparator: str = ";"
+    DecimalSeparator: str = ","
+    NameRowIndex: int = 0
+    UnitRowIndex: int = -1
+    ValuesStartRowIndex: int = 1
+    ValuesStartColumnIndex: int = 1
+
+    # Backend uses "%d.%m.%Y %H:%M:%S.%F" -> Python uses "%f"
+    # Provide override if needed.
+    DateTimeFmtColumn1: str = "%Y-%m-%d %H:%M:%S.%F"
+    DateTimeFmtColumn2: str = ""
+    DateTimeFmtColumn3: str = ""
+
+    SourceID: Optional[str] = None
+    RetentionTimeSec: int = 0
+    TimeOffsetSec: int = 0
+    AddTimeSeries: bool = False
+    SampleRate: int = -1
 
 class LogSettings(BaseModel):
     SourceID: str

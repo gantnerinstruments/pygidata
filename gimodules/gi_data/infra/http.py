@@ -46,8 +46,12 @@ class AsyncHTTP:
             *,
             params: Optional[Mapping[str, Any]] = None,
             json: Any | None = None,
+            content: bytes | None = None,
+            headers: Optional[Mapping[str, str]] = None,
     ) -> httpx.Response:
-        return await self._request("POST", url, params=params, json=json)
+        return await self._request(
+            "POST", url, params=params, json=json, content=content, headers=headers
+        )
 
     async def delete(
             self,
@@ -65,10 +69,23 @@ class AsyncHTTP:
             *,
             params: Optional[Mapping[str, Any]],
             json: Any | None,
+            content: bytes | None = None,
+            headers: Optional[MutableMapping[str, str]] = None,
     ) -> httpx.Response:
-        headers: MutableMapping[str, str] = {"content-type": "application/json"}
+
+        # base headers
+        final_headers: MutableMapping[str, str] = {}
         token = await self._auth.bearer()
-        headers["authorization"] = f"Bearer {token}"
+        final_headers["authorization"] = f"Bearer {token}"
+
+        if content is not None:
+            final_headers["content-type"] = "application/octet-stream"
+        else:
+            final_headers["content-type"] = "application/json"
+
+        # allow caller overrides
+        if headers:
+            final_headers.update(headers)
 
         logger.debug(
             "Request: %s %s%s | Params: %s | Payload: %s",
@@ -76,11 +93,16 @@ class AsyncHTTP:
             self._base,
             url,
             params if params else "None",
-            json if json else "None",
+            "(bytes)" if content is not None else (json if json else "None"),
         )
 
         res = await self._client.request(
-            method, url, headers=headers, params=params, json=json
+            method,
+            url,
+            headers=final_headers,
+            params=params,
+            json=json,
+            content=content,
         )
 
         logger.info(
@@ -90,8 +112,9 @@ class AsyncHTTP:
         )
         logger.debug("Response Content: %s", res.content)
 
-        if res.status_code >= 400:
-            logger.debug("Response Body (Error, first 500 chars): %s", res.text[:500])
+        if res.status_code == 404:
+            logger.warning("WARNING!: Response Body (Error, first 500 chars): %s", res.text[:500])
+            return res
 
         res.raise_for_status()
         return res

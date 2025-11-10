@@ -11,7 +11,7 @@ import logging
 from gimodules.gi_data.dataclient import GIDataClient
 from gimodules.gi_data.drivers.cloud_gql import CloudGQLDriver
 from gimodules.gi_data.mapping.enums import DataFormat, Resolution
-from gimodules.gi_data.mapping.models import VarSelector
+from gimodules.gi_data.mapping.models import VarSelector, CSVImportSettings
 from gimodules.gi_data.utils.logging import setup_module_logger
 from gimodules.gi_data.mapping import *
 
@@ -23,7 +23,7 @@ ACTIVE_PROFILE = "cloud"  # Change this to: "stream", "records", "cloud", "qstat
 
 CONFIGS = {
     "qcore": {
-        "base": "http://qcore-111006:8090",
+        "base": "http://qcore-111003:8090",
         "auth": {"username": "admin", "password": "admin"}
     },
     "qstation": {
@@ -116,8 +116,9 @@ async def buffer():
         time.sleep(1)
         df.to_csv("debug_output.csv")
 
-async def export_csv():
-    client = get_client(CONFIGS["qstation"])
+async def export_data():
+
+    client = get_client(CONFIGS["qcore"])
     buffers = client.list_buffer_sources()
     #src = next((s for s in buffers if s.name == "demo_otf4"), None)
     src = buffers[0]
@@ -131,17 +132,18 @@ async def export_csv():
         VarSelector(SID=v.sid, VID=v.id)
         for v in variables
     ]
-    format = DataFormat.UDBF
-    raw = client.export(
+    format = DataFormat.CSV
+
+    raw = client.export_data(
         selectors,
-        start_ms=src.last_ts - 99999,
+        start_ms=src.last_ts - 999,
         end_ms=src.last_ts, format=format,
         resolution=Resolution.SECOND # needed only on cloud
     )
 
     # Save for debugging
     if format == DataFormat.CSV:
-        with open("debug_exportcsv.csv", "wb") as f:
+        with open("debug_export_datacsv.csv", "wb") as f:
             f.write(raw)
 
         # Convert to DataFrame
@@ -149,10 +151,45 @@ async def export_csv():
         import pandas as pd
         df = pd.read_csv(BytesIO(raw), sep=";", decimal=",")
     if format == DataFormat.UDBF:
-        with open("debug_exportudbf.dat", "wb") as f:
+        with open("debug_export_dataudbf.dat", "wb") as f:
             f.write(raw)
 
+async def import_data():
+    client = get_client(CONFIGS["cloud"])
+    buffers = client.list_buffer_sources()
+    #src = next((s for s in buffers if s.name == "demo_otf4"), None)
+    src = buffers[0]
 
+
+    logger.info(f"Selected Buffer source: {src}")
+
+    variables = client.list_stream_variables(src.id)[:99]
+
+    selectors: List[VarSelector] = [
+        VarSelector(SID=v.sid, VID=v.id)
+        for v in variables
+    ]
+
+    csv_settings = CSVImportSettings
+
+    format = DataFormat.CSV
+
+    new_uuid = UUID("11111111-2222-3333-4444-555555555512")
+
+    if format == DataFormat.CSV:
+        with open("debug_export_datacsv.csv", "rb") as f:
+            raw = f.read()
+    if format == DataFormat.UDBF:
+        with open("debug_export_dataudbf.dat", "rb") as f:
+            raw = f.read()
+
+    client.import_data(str(new_uuid),
+        "ImportTestStreamCSV",
+                    raw,
+                    format=format,
+                    target="stream"
+                   )
+            
 async def history():
     #BASE = "http://10.1.50.36:8090"
     client = get_client(CONFIGS["qcore"])
@@ -245,4 +282,6 @@ if __name__ == '__main__':
     #asyncio.run(cloud_test())
     #stream_kafka_test()
     #asyncio.run(online())
-    asyncio.run(export_csv())
+
+    #asyncio.run(export_data())
+    asyncio.run(import_data())

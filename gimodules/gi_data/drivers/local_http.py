@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import timezone
 from typing import Any, Dict, List, Tuple, Union, Optional, Literal
 from uuid import UUID
@@ -13,10 +14,12 @@ from gimodules.gi_data.mapping.models import (
     GIStream,
     GIStreamVariable,
     TimeSeries,
-    VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable, CSVSettings, LogSettings,
+    VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable, CSVSettings, LogSettings, CSVImportSettings,
 )
 from ..mapping.enums import Resolution, DataType
+from ..utils.logging import setup_module_logger
 
+logger = setup_module_logger(__name__, level=logging.DEBUG)
 
 class HTTPTimeSeriesDriver(BaseDriver):
     """
@@ -62,6 +65,9 @@ class HTTPTimeSeriesDriver(BaseDriver):
             self, sid: Union[str, int, UUID]
     ) -> List[GIStreamVariable]:
         res = await self.http.get(f"/{self._root}/structure/sources/{sid}/variables")
+        if not res.json().get("Data"):
+            logger.warning(f"Source {sid} has no variables")
+            return []
         raw = res.json()["Data"]
         return [GIStreamVariable.model_validate(r | {"sid": sid}) for r in raw]
 
@@ -116,8 +122,9 @@ class HTTPTimeSeriesDriver(BaseDriver):
             Start=start_ms, End=end_ms, Variables=selectors, Points=points or 2048,
             Type="equidistant", Format=fmt, Precision=precision, TimeZone=timezone, TimeOffset=0
         ).model_dump(by_alias=True, mode="json")
-        if fmt == "csv" and csv_settings:
-            req["CSVSettings"] = csv_settings.model_dump(exclude_none=True)
+        if fmt == "csv":
+            settings = csv_settings or CSVSettings()  # default settings
+            req["CSVSettings"] = settings.model_dump(exclude_none=True)
         if fmt == "udbf" and log_settings:
             req["LogSettings"] = log_settings.model_dump(exclude_none=True)
         if fmt == "udbf" and target:
@@ -131,7 +138,8 @@ class HTTPTimeSeriesDriver(BaseDriver):
         source_name: str,
         file_bytes: bytes,
         *,
-        csv_settings: Optional[CSVSettings] = None,
+        target: str = "stream",
+        csv_settings: Optional[CSVImportSettings] = None,
         add_time_series: bool = False,
         retention_time_sec: int = 0,
         time_offset_sec: int = 0,
@@ -146,15 +154,15 @@ class HTTPTimeSeriesDriver(BaseDriver):
             "SessionTimeoutSec": str(session_timeout_sec),
             "SampleRate": str(sample_rate),
             "AutoCreateMetaData": str(auto_create_metadata).lower(),
-            "CSVSettings": (csv_settings.model_dump(exclude_none=True) if csv_settings else {}),
+            "CSVSettings": (csv_settings or CSVImportSettings()).model_dump(exclude_none=True),
             "RetentionTimeSec": retention_time_sec,
-            "Target": "stream",
+            "Target": target,
             "TimeOffsetSec": time_offset_sec,
             "AddTimeSeries": add_time_series,
         }
         res = await self.http.post("/history/data/import", json=param)
         sid = res.json()["Data"]["SessionID"]
-        await self.http.post(f"/history/data/import/{sid}", data=file_bytes,
+        await self.http.post(f"/history/data/import/{sid}", content=file_bytes,
                              headers={"Content-Type": "text/csv"})
         await self.http.delete(f"/history/data/import/{sid}")
         return str(sid)
@@ -165,24 +173,26 @@ class HTTPTimeSeriesDriver(BaseDriver):
         source_name: str,
         file_bytes: bytes,
         *,
+        target: str = "stream",
         add_time_series: bool = False,
         sample_rate: int = -1,
         auto_create_metadata: bool = True,
-        session_timeout_sec: int = 300,
+        session_timeout_sec: int = 20,
     ) -> str:
         param = {
             "Type": "udbf",
+            "Target": target,
             "SourceID": source_id,
             "SourceName": source_name,
             "MeasID": "",
-            "SessionTimeoutSec": str(session_timeout_sec),
+            "SessionTimeoutSec": int(session_timeout_sec),
             "AddTimeSeries": str(add_time_series).lower(),
             "SampleRate": str(sample_rate),
             "AutoCreateMetaData": str(auto_create_metadata).lower(),
         }
         res = await self.http.post("/history/data/import", json=param)
         sid = res.json()["Data"]["SessionID"]
-        await self.http.post(f"/history/data/import/{sid}", data=file_bytes,
+        await self.http.post(f"/history/data/import/{sid}", content=file_bytes,
                              headers={"Content-Type": "application/octet-stream"})
         await self.http.delete(f"/history/data/import/{sid}")
         return str(sid)
