@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union, Type
+from typing import Any, Dict, List, Optional, Tuple, Union, Type, Iterable
 from uuid import UUID
 
 import nest_asyncio
@@ -19,7 +19,7 @@ from gimodules.gi_data.infra.auth import AuthManager
 from gimodules.gi_data.infra.http import AsyncHTTP
 from gimodules.gi_data.mapping.enums import Resolution, DataType, DataFormat
 from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
-    LogSettings, CSVImportSettings
+    LogSettings, CSVImportSettings, GIHistoryMeasurement
 from gimodules.gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -135,23 +135,49 @@ class GIDataClient:
     def list_history_variables(self, source_id: Union[UUID, int]):
         return _run(self._drivers["history"].list_stream_variables(source_id))
 
-    def list_history_measurements(self, source_id: UUID) -> List[dict]:
-        return _run(self._drivers["history"].list_measurements(source_id))
+    def list_history_measurements(
+            self,
+            source_id: Union[str, int, UUID],
+            *,
+            start: Optional[int] = None,
+            end: Optional[int] = None,
+            order: str = "DESC",
+            limit: Optional[int] = None,
+            measurements: Optional[Iterable[Union[str, UUID]]] = None,
+            add_var_mapping: bool = True,
+            add_meas_metadata: bool = False,
+            meas_metadata_filter: Optional[List[dict]] = None,
+    ) -> List[GIHistoryMeasurement]:
+        return _run(
+            self._drivers["history"].list_measurements(
+                source_id,
+                start=start,
+                end=end,
+                order=order,
+                limit=limit,
+                measurements=measurements,
+                add_var_mapping=add_var_mapping,
+                add_meas_metadata=add_meas_metadata,
+                meas_metadata_filter=meas_metadata_filter,
+            )
+        )
 
     def fetch_history(
             self,
-            source_id: UUID,
+            selectors: List[VarSelector],
             measurement_id: UUID,
-            var_ids: List[UUID],
             *,
             start_ms: float = 0,
             end_ms: float = 0,
             points: int = 2048,
     ) -> pd.DataFrame:
-        sels = [(source_id, vid) for vid in var_ids]
         return _run(
             self._drivers["history"].fetch_history(
-                sels, start_ms=start_ms, end_ms=end_ms, points=points
+                selectors,
+                measurement_id=measurement_id,
+                start_ms=start_ms,
+                end_ms=end_ms,
+                points=points,
             )
         )
 

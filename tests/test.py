@@ -197,12 +197,25 @@ async def history():
     src = client.list_history_sources()[0]
     logger.info(f"Selected Buffer source: {src}")
 
-    meas = client.list_history_measurements(src.id)[-1]
-    logger.info(f"Selected Measurement : {meas}")
+    measurements = client.list_history_measurements(src.id)
+    for meas, idx in zip(measurements, range(len(measurements))):
+        logger.info(f"Measurement {idx}: {meas}")
+    selected_meas = measurements[0]
 
-    vars_ = [UUID(v.id) for v in client.list_history_variables(src.id)[:2]]
-    df = client.fetch_history(src.id, meas.id, vars_, start_ms=meas.absolute_start, end_ms=meas.last_ts)
+    variables = selected_meas.variables
+
+    selectors: List[VarSelector] = [
+        VarSelector(SID=selected_meas.source_id, VID=v.id)
+        for v in variables
+    ]
+    df = client.fetch_history(
+        selectors,
+        measurement_id=selected_meas.id,
+        start_ms=selected_meas.absolute_start,
+        end_ms=selected_meas.last_ts,
+    )
     print(df.head())
+    df.to_csv("debug_export_history_measurement.csv")
 
 
 def stream_kafka_test():
@@ -278,10 +291,12 @@ if __name__ == '__main__':
     #asyncio.run(subscribe_publish())
     #asyncio.run(buffer())
 
-    #asyncio.run(history())
+
     #asyncio.run(cloud_test())
     #stream_kafka_test()
     #asyncio.run(online())
 
     #asyncio.run(export_data())
-    asyncio.run(import_data())
+    #asyncio.run(import_data())
+
+    asyncio.run(history())

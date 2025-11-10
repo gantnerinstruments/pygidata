@@ -29,24 +29,6 @@ class BufferRequest(BaseModel):
         validate_by_name = True
         frozen = True
 
-
-class HistoryRequest(BaseModel):
-    SID: Union[UUID, str, int]
-    MID: Union[UUID, str, int]
-    Start: float = 0
-    End: float = 0
-    Variables: List[UUID]
-    Points: int = 2048
-    Type: str = "equidistant"
-    Format: str = "json"
-    Precision: int = -1
-    TimeZone: str = "UTC"
-    TimeOffset: int = 0
-
-    class Config:
-        validate_by_name = True
-        frozen = True
-
 class TimeSeries(BaseModel):
     Type: str
     Format: str
@@ -84,7 +66,7 @@ class HistorySuccess(BufferSuccess):
 
 class GIStream(BaseModel):
     name: str = Field(alias="Name")
-    id: Union[UUID, int] = Field(alias="Id")
+    id: Union[str, UUID, int] = Field(alias="Id")
     sample_rate_hz: float = Field(alias="SampleRateHz")
     first_ts: float = Field(alias="AbsoluteStart")
     last_ts: float = Field(alias="LastTimeStamp")
@@ -127,6 +109,40 @@ class GIOnlineVariable(BaseModel):
         frozen = True
         extra = "ignore"
 
+class HistoryRequest(BaseModel):
+    Start: float = 0
+    End: float = 0
+    Variables: List[VarSelector]
+    Points: int = 2048
+    Type: str = "equidistant"
+    Format: str = "json"
+    Precision: int = -1
+    TimeZone: str = "UTC"
+    TimeOffset: int = 0
+    AddVarMapping: bool = True
+
+    class Config:
+        validate_by_name = True
+        frozen = True
+
+
+class GIHistoryVariable(BaseModel):
+    id: Union[UUID, str] = Field(alias="Id")
+    name: str = Field(alias="Name")
+    data_format: str = Field(alias="DataFormat")
+    direction: str = Field(alias="Direction")
+    type: str = Field(alias="Type")
+    index: int = Field(alias="Index")
+    index_in: int = Field(alias="IndexIn")
+    index_out: int = Field(alias="IndexOut")
+    precision: int = Field(alias="Precision")
+    range_max: float = Field(alias="RangeMax")
+    range_min: float = Field(alias="RangeMin")
+    unit: str = Field(alias="Unit")
+    internal_id: Optional[str] = Field(alias="_id", default=None)
+
+    model_config = dict(validate_by_name=True, frozen=True, extra="ignore")
+
 
 class GIHistoryMeasurement(BaseModel):
     id: Union[UUID, int] = Field(alias="Id")
@@ -134,8 +150,25 @@ class GIHistoryMeasurement(BaseModel):
     absolute_start: float = Field(alias="AbsoluteStart")
     last_ts: float = Field(alias="LastTimeStamp")
 
-    # keep any extra keys we don’t care about
-    model_config = dict(validate_by_name=True, frozen=True, extra="ignore")
+    available_time_sec: float = Field(alias="AvailableTimeSec")
+    cfg_checksum: str = Field(alias="CfgCheckSum")
+    data_storage: str = Field(alias="DataStorage")
+    index: int = Field(alias="Index")
+    is_removable: bool = Field(alias="IsRemovable")
+    kind: str = Field(alias="Kind")
+    max_time_sec: float = Field(alias="MaxTimeSec")
+    sample_rate_hz: float = Field(alias="SampleRateHz")
+    source_id: Union[UUID, int, str] = Field(alias="SourceId")
+    start_date: str = Field(alias="StartDate")
+    updated: bool = Field(alias="Updated")
+    variables: List[GIHistoryVariable] = Field(alias="Variables")
+    internal_id: Optional[str] = Field(alias="_id", default=None)
+
+    model_config = dict(
+        validate_by_name=True,
+        frozen=True,
+        extra="ignore",
+    )
 
 class CSVSettings(BaseModel):
     HeaderText: Optional[str] = None

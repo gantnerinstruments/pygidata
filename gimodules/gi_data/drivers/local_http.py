@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import timezone
-from typing import Any, Dict, List, Tuple, Union, Optional, Literal
+from typing import Any, Dict, List, Tuple, Union, Optional, Literal, Iterable
 from uuid import UUID
 
 import pandas as pd
@@ -15,6 +15,7 @@ from gimodules.gi_data.mapping.models import (
     GIStreamVariable,
     TimeSeries,
     VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable, CSVSettings, LogSettings, CSVImportSettings,
+    HistoryRequest,
 )
 from ..mapping.enums import Resolution, DataType
 from ..utils.logging import setup_module_logger
@@ -71,12 +72,48 @@ class HTTPTimeSeriesDriver(BaseDriver):
         raw = res.json()["Data"]
         return [GIStreamVariable.model_validate(r | {"sid": sid}) for r in raw]
 
-    async def list_measurements(  # only for history
-            self, sid: Union[str, int, UUID]
+    async def list_measurements(
+        self,
+        sid: Union[str, int, UUID],
+        *,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        order: str = "DESC",
+        limit: Optional[int] = None,
+        measurements: Optional[Iterable[Union[str, UUID]]] = None,
+        add_var_mapping: bool = True,
+        add_meas_metadata: bool = False,
+        meas_metadata_filter: Optional[List[dict]] = None,
     ) -> List[GIHistoryMeasurement]:
+
         if self._root != "history":
             raise RuntimeError("measurements only exist on /history")
-        res = await self.http.get(f"/history/structure/sources/{sid}/measurements")
+
+        payload = {}
+
+        if start is not None:
+            payload["Start"] = int(start)
+        if end is not None:
+            payload["End"] = int(end)
+        if order:
+            payload["Order"] = order
+        if limit is not None:
+            payload["Limit"] = int(limit)
+        if measurements:
+            payload["Measurements"] = [str(m) for m in measurements]
+
+        # optional flags
+        payload["AddVarMapping"] = bool(add_var_mapping)
+        payload["AddMeasMetaData"] = bool(add_meas_metadata)
+
+        if meas_metadata_filter:
+            payload["MeasMetaDataFilter"] = meas_metadata_filter
+
+        res = await self.http.post(
+            f"/{self._root}/structure/sources/{sid}/measurements",
+            json=payload,
+        )
+
         return [GIHistoryMeasurement.model_validate(d) for d in res.json()["Data"]]
 
     # -------- Data ---------------------------------------------------
@@ -99,6 +136,46 @@ class HTTPTimeSeriesDriver(BaseDriver):
         else:
             ts = BufferSuccess.model_validate(res.json()).first_timeseries()
 
+        return _to_frame(ts, [UUID(str(v.VID)) for v in vars_])
+
+    async def fetch_history(
+            self,
+            selectors: List[VarSelector],
+            *,
+            measurement_id: UUID,
+            start_ms: float = 0,
+            end_ms: float = 0,
+            points: int = 2048,
+    ) -> pd.DataFrame:
+        # Apply measurement selection to each selector
+        vars_ = [
+            VarSelector(
+                SID=s.SID,
+                VID=s.VID,
+                Selector=f"mid:{measurement_id}"
+            )
+            for s in selectors
+        ]
+
+        req = HistoryRequest(
+            Start=start_ms,
+            End=end_ms,
+            Variables=vars_,
+            Points=points,
+        )
+
+        source_id = getattr(self, "_source_id", None)
+        if source_id:
+            url = f"/history/data/{source_id}"
+        else:
+            url = "/history/data"
+
+        res = await self.http.post(
+            url,
+            json=req.model_dump(by_alias=True, mode="json"),
+        )
+
+        ts = HistorySuccess.model_validate(res.json()).first_timeseries()
         return _to_frame(ts, [UUID(str(v.VID)) for v in vars_])
 
     async def export(  # maps to /{root}/data
