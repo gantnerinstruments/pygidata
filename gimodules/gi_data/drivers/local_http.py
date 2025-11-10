@@ -177,7 +177,7 @@ class HTTPTimeSeriesDriver(BaseDriver):
         add_time_series: bool = False,
         sample_rate: int = -1,
         auto_create_metadata: bool = True,
-        session_timeout_sec: int = 20,
+        session_timeout_sec: int = 300,
     ) -> str:
         param = {
             "Type": "udbf",

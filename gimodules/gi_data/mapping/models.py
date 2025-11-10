@@ -165,12 +165,6 @@ class CSVImportSettings(BaseModel):
     DateTimeFmtColumn2: str = ""
     DateTimeFmtColumn3: str = ""
 
-    SourceID: Optional[str] = None
-    RetentionTimeSec: int = 0
-    TimeOffsetSec: int = 0
-    AddTimeSeries: bool = False
-    SampleRate: int = -1
-
 class LogSettings(BaseModel):
     SourceID: str
     SourceName: str

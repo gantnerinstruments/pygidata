@@ -121,7 +121,7 @@ async def export_data():
     client = get_client(CONFIGS["qcore"])
     buffers = client.list_buffer_sources()
     #src = next((s for s in buffers if s.name == "demo_otf4"), None)
-    src = buffers[0]
+    src = buffers[1]
 
 
     logger.info(f"Selected Buffer source: {src}")
@@ -136,7 +136,7 @@ async def export_data():
 
     raw = client.export_data(
         selectors,
-        start_ms=src.last_ts - 999,
+        start_ms=src.last_ts - 999999,
         end_ms=src.last_ts, format=format,
         resolution=Resolution.SECOND # needed only on cloud
     )
@@ -155,7 +155,7 @@ async def export_data():
             f.write(raw)
 
 async def import_data():
-    client = get_client(CONFIGS["cloud"])
+    client = get_client(CONFIGS["qcore"])
     buffers = client.list_buffer_sources()
     #src = next((s for s in buffers if s.name == "demo_otf4"), None)
     src = buffers[0]
@@ -174,7 +174,7 @@ async def import_data():
 
     format = DataFormat.CSV
 
-    new_uuid = UUID("11111111-2222-3333-4444-555555555512")
+    new_uuid = UUID("11111111-2222-3333-4444-555555555516")
 
     if format == DataFormat.CSV:
         with open("debug_export_datacsv.csv", "rb") as f:
@@ -184,7 +184,7 @@ async def import_data():
             raw = f.read()
 
     client.import_data(str(new_uuid),
-        "ImportTestStreamCSV",
+        "ImportTestStreamCSV2",
                     raw,
                     format=format,
                     target="stream"
