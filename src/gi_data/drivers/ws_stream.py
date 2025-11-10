@@ -10,14 +10,14 @@ from typing import (
 )
 from uuid import UUID
 
-from gimodules.gi_data.utils.logging import setup_module_logger
-from gimodules.gi_data.ws.enums import (
+from gi_data.gi_data.utils.logging import setup_module_logger
+from gi_data.gi_data.ws.enums import (
     GInsWSMessageTypes as MT,
     GInsWSWorkerTypes as WT,
 )
-from gimodules.gi_data.infra.ws import AsyncWS
-from gimodules.gi_data.infra.http import AsyncHTTP
-from gimodules.gi_data.infra.auth import AuthManager
+from gi_data.gi_data.infra.ws import AsyncWS
+from gi_data.gi_data.infra.http import AsyncHTTP
+from gi_data.gi_data.infra.auth import AuthManager
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 

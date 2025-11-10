@@ -1,4 +1,4 @@
-# gimodules/gi_data/dataclient.py
+# src/src/dataclient.py
 from __future__ import annotations
 
 import asyncio
@@ -10,20 +10,20 @@ from uuid import UUID
 import nest_asyncio
 import pandas as pd
 
-from gimodules.gi_data.drivers.base import BaseDriver
-from gimodules.gi_data.drivers.cloud_gql import CloudGQLDriver
-from gimodules.gi_data.drivers.kafka_stream import KafkaStreamDriver
-from gimodules.gi_data.drivers.local_http import HTTPTimeSeriesDriver
-from gimodules.gi_data.drivers.ws_stream import WebSocketDriver
-from gimodules.gi_data.infra.auth import AuthManager
-from gimodules.gi_data.infra.http import AsyncHTTP
-from gimodules.gi_data.mapping.enums import Resolution, DataType, DataFormat
-from gimodules.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
+from gi_data.gi_data.drivers.base import BaseDriver
+from gi_data.gi_data.drivers.cloud_gql import CloudGQLDriver
+from gi_data.gi_data.drivers.kafka_stream import KafkaStreamDriver
+from gi_data.gi_data.drivers.local_http import HTTPTimeSeriesDriver
+from gi_data.gi_data.drivers.ws_stream import WebSocketDriver
+from gi_data.gi_data.infra.auth import AuthManager
+from gi_data.gi_data.infra.http import AsyncHTTP
+from gi_data.gi_data.mapping.enums import Resolution, DataType, DataFormat
+from gi_data.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
     LogSettings, CSVImportSettings, GIHistoryMeasurement
-from gimodules.gi_data.utils.logging import setup_module_logger
+from gi_data.gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
-PACKAGE_PREFIX = "gimodules.gi_data"
+PACKAGE_PREFIX = "src.src"
 # ------------------------------------------------------------------ #
 # helpers                                                            #
 # ------------------------------------------------------------------ #
@@ -212,7 +212,7 @@ class GIDataClient:
 
     async def _ensure_ws_driver(self) -> WebSocketDriver:
         if self._ws_driver is None:
-            from gimodules.gi_data.infra.ws import AsyncWS
+            from gi_data.gi_data.infra.ws import AsyncWS
             ws = AsyncWS(self._http.base_url, self._auth)
             self._ws_driver = WebSocketDriver(self._auth, ws, self._http)
         return self._ws_driver
@@ -233,7 +233,7 @@ class GIDataClient:
 
     async def _ensure_kafka_driver(self) -> KafkaStreamDriver:
         if self._kafka is None:
-            from gimodules.gi_data.drivers.kafka_stream import KafkaStreamDriver
+            from gi_data.gi_data.drivers.kafka_stream import KafkaStreamDriver
             self._kafka = KafkaStreamDriver(self._auth, self._http)
         return self._kafka
 

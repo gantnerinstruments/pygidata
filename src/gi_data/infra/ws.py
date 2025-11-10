@@ -8,7 +8,7 @@ from typing import Any, List, Tuple
 import websockets
 import certifi
 
-from gimodules.gi_data.infra.auth import AuthManager
+from gi_data.gi_data.infra.auth import AuthManager
 
 log = logging.getLogger(__name__)
 

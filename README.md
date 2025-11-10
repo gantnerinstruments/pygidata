@@ -5,7 +5,7 @@
 ### Install from PyPi
 
 ```bash 
-pip install gimodules
+pip install src
 ```
 
 Import module in python script and call functions.
@@ -13,10 +13,10 @@ Import module in python script and call functions.
 A detailed description of the package and other APIs can be found in the Gantner Documentation.
 
 ```python
-from gimodules.cloudconnect.cloud_request import CloudRequest
+from gi_data.cloudconnect.cloud_request import CloudRequest
 
 cloud = CloudRequest()
-cloud.login(url='https://example.gi-cloud.io', access_token='TOKEN') # Create a token under Tools -> Monitor
+cloud.login(url='https://example.gi-cloud.io', access_token='TOKEN')  # Create a token under Tools -> Monitor
 cloud.get_all_stream_metadata()
 ```
 
@@ -118,7 +118,7 @@ The documentation consists of partially generated content.
 To **generate .rst files** from the code package, run the following command from the root directory of the project:
 
 ```bash
-sphinx-apidoc -o docs/source/ gimodules
+sphinx-apidoc -o docs/source/ src
 ```
 You need pandoc installed on the system itself first to build:
 

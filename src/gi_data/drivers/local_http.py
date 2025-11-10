@@ -8,7 +8,7 @@ from uuid import UUID
 import pandas as pd
 
 from .base import BaseDriver
-from gimodules.gi_data.mapping.models import (
+from gi_data.gi_data.mapping.models import (
     BufferRequest,
     BufferSuccess,
     GIStream,

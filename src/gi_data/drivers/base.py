@@ -6,7 +6,7 @@ from uuid import UUID
 
 import pandas as pd
 
-from gimodules.gi_data.mapping.models import LogSettings, CSVSettings, VarSelector
+from gi_data.gi_data.mapping.models import LogSettings, CSVSettings, VarSelector
 
 
 

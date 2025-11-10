@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 # Import the classes from the module containing the websocket client
-from gimodules.cloudconnect.gi_websocket import (
+from gi_data.cloudconnect.gi_websocket import (
     GIWebSocket,
     WSWorkerComponent,
     GInsWSWorkerTypes,
@@ -13,8 +13,8 @@ from gimodules.cloudconnect.gi_websocket import (
 
 
 class TestGIWebSocket(unittest.TestCase):
-    @patch("gimodules.cloudconnect.gi_websocket.SocketService")
-    @patch("gimodules.cloudconnect.gi_websocket.GInsWebSocket")
+    @patch("src.cloudconnect.gi_websocket.SocketService")
+    @patch("src.cloudconnect.gi_websocket.GInsWebSocket")
     def test_create_worker_calls_socket_service_subscribe(
         self, mock_gins_websocket, mock_socket_service
     ):
@@ -43,8 +43,8 @@ class TestGIWebSocket(unittest.TestCase):
             worker_component.route,
         )
 
-    @patch("gimodules.cloudconnect.gi_websocket.SocketService")
-    @patch("gimodules.cloudconnect.gi_websocket.GInsWebSocket")
+    @patch("src.cloudconnect.gi_websocket.SocketService")
+    @patch("src.cloudconnect.gi_websocket.GInsWebSocket")
     def test_publish_sends_message_via_socket_service(
         self, mock_gins_websocket, mock_socket_service
     ):
@@ -69,7 +69,7 @@ class TestGIWebSocket(unittest.TestCase):
         # Assert
         mock_socket_service_instance.publish.assert_called_once_with(worker_component, payload)
 
-    @patch("gimodules.cloudconnect.gi_websocket.GIWebSocket")
+    @patch("src.cloudconnect.gi_websocket.GIWebSocket")
     def test_socket_service_send_message_constructs_correctly(self, mock_websocket_app):
         # Arrange
         mock_ws = Mock()
@@ -92,8 +92,8 @@ class TestGIWebSocket(unittest.TestCase):
         # Since sent_message is binary, we can check parts of it
         self.assertTrue(isinstance(sent_message, bytes))
 
-    @patch("gimodules.cloudconnect.gi_websocket.SocketService")
-    @patch("gimodules.cloudconnect.gi_websocket.GInsWebSocket")
+    @patch("src.cloudconnect.gi_websocket.SocketService")
+    @patch("src.cloudconnect.gi_websocket.GInsWebSocket")
     def test_disconnect_closes_websocket(self, mock_gins_websocket, mock_socket_service):
         # Arrange
         mock_ws_instance = Mock()

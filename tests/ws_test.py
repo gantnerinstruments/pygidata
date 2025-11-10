@@ -4,7 +4,7 @@ import asyncio
 from random import random
 from uuid import UUID
 
-from gimodules.gi_data.dataclient import GIDataClient
+from gi_data.gi_data.dataclient import GIDataClient
 
 """
 The GI device does not always start sending Online-Data until the TCP/WS

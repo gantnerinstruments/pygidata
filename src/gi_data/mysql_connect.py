@@ -6,7 +6,7 @@ import pandas as pd
 
 import pymysql
 
-from gimodules.cloudconnect.utils import (
+from gi_data.cloudconnect.utils import (
     split_dates,
     get_dates_from_string,
     replace_dates_in_string,

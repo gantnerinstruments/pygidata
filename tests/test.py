@@ -8,12 +8,12 @@ from uuid import UUID
 import pandas as pd
 import logging
 
-from gimodules.gi_data.dataclient import GIDataClient
-from gimodules.gi_data.drivers.cloud_gql import CloudGQLDriver
-from gimodules.gi_data.mapping.enums import DataFormat, Resolution
-from gimodules.gi_data.mapping.models import VarSelector, CSVImportSettings
-from gimodules.gi_data.utils.logging import setup_module_logger
-from gimodules.gi_data.mapping import *
+from gi_data.gi_data.dataclient import GIDataClient
+from gi_data.gi_data.drivers.cloud_gql import CloudGQLDriver
+from gi_data.gi_data.mapping.enums import DataFormat, Resolution
+from gi_data.gi_data.mapping.models import VarSelector, CSVImportSettings
+from gi_data.gi_data.utils.logging import setup_module_logger
+from gi_data.gi_data.mapping import *
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 
