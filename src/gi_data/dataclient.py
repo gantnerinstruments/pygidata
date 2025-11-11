@@ -10,17 +10,17 @@ from uuid import UUID
 import nest_asyncio
 import pandas as pd
 
-from gi_data.gi_data.drivers.base import BaseDriver
-from gi_data.gi_data.drivers.cloud_gql import CloudGQLDriver
-from gi_data.gi_data.drivers.kafka_stream import KafkaStreamDriver
-from gi_data.gi_data.drivers.local_http import HTTPTimeSeriesDriver
-from gi_data.gi_data.drivers.ws_stream import WebSocketDriver
-from gi_data.gi_data.infra.auth import AuthManager
-from gi_data.gi_data.infra.http import AsyncHTTP
-from gi_data.gi_data.mapping.enums import Resolution, DataType, DataFormat
-from gi_data.gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
+from gi_data.drivers.base import BaseDriver
+from gi_data.drivers.cloud_gql import CloudGQLDriver
+from gi_data.drivers.kafka_stream import KafkaStreamDriver
+from gi_data.drivers.local_http import HTTPTimeSeriesDriver
+from gi_data.drivers.ws_stream import WebSocketDriver
+from gi_data.infra.auth import AuthManager
+from gi_data.infra.http import AsyncHTTP
+from gi_data.mapping.enums import Resolution, DataType, DataFormat
+from gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
     LogSettings, CSVImportSettings, GIHistoryMeasurement
-from gi_data.gi_data.utils.logging import setup_module_logger
+from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 PACKAGE_PREFIX = "src.src"
@@ -212,7 +212,7 @@ class GIDataClient:
 
     async def _ensure_ws_driver(self) -> WebSocketDriver:
         if self._ws_driver is None:
-            from gi_data.gi_data.infra.ws import AsyncWS
+            from gi_data.infra.ws import AsyncWS
             ws = AsyncWS(self._http.base_url, self._auth)
             self._ws_driver = WebSocketDriver(self._auth, ws, self._http)
         return self._ws_driver
@@ -233,7 +233,7 @@ class GIDataClient:
 
     async def _ensure_kafka_driver(self) -> KafkaStreamDriver:
         if self._kafka is None:
-            from gi_data.gi_data.drivers.kafka_stream import KafkaStreamDriver
+            from gi_data.drivers.kafka_stream import KafkaStreamDriver
             self._kafka = KafkaStreamDriver(self._auth, self._http)
         return self._kafka
 

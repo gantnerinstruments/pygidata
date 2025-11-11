@@ -5,8 +5,8 @@ from typing import Any, Mapping, MutableMapping, Optional
 
 import httpx
 
-from gi_data.gi_data.infra.auth import AuthManager
-from gi_data.gi_data.utils.logging import setup_module_logger
+from gi_data.infra.auth import AuthManager
+from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 

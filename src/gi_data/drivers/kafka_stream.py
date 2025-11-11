@@ -10,9 +10,9 @@ from uuid import UUID
 from aiokafka import AIOKafkaConsumer
 from aiokafka.helpers import create_ssl_context
 
-from gi_data.gi_data.infra.auth import AuthManager
-from gi_data.gi_data.infra.http import AsyncHTTP
-from gi_data.gi_data.utils.logging import setup_module_logger
+from gi_data.infra.auth import AuthManager
+from gi_data.infra.http import AsyncHTTP
+from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.INFO)
 

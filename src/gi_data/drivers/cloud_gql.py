@@ -8,12 +8,12 @@ from typing import Any, Dict, List, Sequence, Tuple, Union, Optional, Literal
 from uuid import UUID
 import pandas as pd
 
-from gi_data.gi_data.mapping.models import (
+from gi_data.mapping.models import (
     GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, BufferSuccess, LogSettings, CSVSettings,
     CSVImportSettings
 )
 from .base import BaseDriver
-from gi_data.gi_data.mapping.enums import Resolution, DataType
+from gi_data.mapping.enums import Resolution, DataType
 
 
 def _now_ms() -> int:

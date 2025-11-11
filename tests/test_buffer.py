@@ -3,7 +3,7 @@ from uuid import uuid4
 import pandas as pd
 import respx
 
-from gi_data.gi_data.dataclient import GIDataClient
+from gi_data.dataclient import GIDataClient
 
 
 def test_buffer_roundtrip() -> None:

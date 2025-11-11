@@ -33,11 +33,6 @@ include = ["gi_data*"]
 # Default dependency file
 dependencies = { file = ["requirements.txt"] }
 
-# Optional: you can use environment markers inside your requirements.txt
-# instead of multiple files (recommended modern approach).
-# However, if you truly want separate files like before, you can add a simple
-# setup hook (see below).
-
 [tool.tox]
 env_list = ["py310", "py311", "py312"]
 

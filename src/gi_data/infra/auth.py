@@ -8,7 +8,7 @@ import logging
 
 import httpx
 
-from gi_data.gi_data.utils.logging import setup_module_logger
+from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 
