@@ -4,13 +4,13 @@ from __future__ import annotations
 import asyncio, math
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Sequence, Tuple, Union, Optional, Literal
+from typing import Any, Dict, List, Sequence, Tuple, Union, Optional, Literal, Iterable
 from uuid import UUID
 import pandas as pd
 
 from gi_data.mapping.models import (
     GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, BufferSuccess, LogSettings, CSVSettings,
-    CSVImportSettings
+    CSVImportSettings, GIHistoryMeasurement
 )
 from .base import BaseDriver
 from gi_data.mapping.enums import Resolution, DataType
@@ -117,10 +117,64 @@ class CloudGQLDriver(BaseDriver):
                 }))
         return out
 
-    async def list_measurements(self, source_id: Union[str, int, UUID]) -> List[Dict[str, Any]]:
-        await self._bearer()
-        r = await self.http.get(f"/history/structure/sources/{source_id}/measurements")
-        return r.json().get("Data", [])
+
+    async def list_measurements(
+            self,
+            source_id: Union[str, int, UUID],
+            *,
+            start: Optional[int] = None,
+            end: Optional[int] = None,
+            order: str = "DESC",
+            limit: Optional[int] = None,
+            measurements: Optional[Iterable[Union[str, UUID]]] = None,
+            add_var_mapping: bool = True,  # ignored on cloud
+            add_meas_metadata: bool = False,  # ignored on cloud
+            meas_metadata_filter: Optional[List[dict]] = None,  # ignored on cloud
+    ) -> List[GIHistoryMeasurement]:
+
+        sid = str(source_id)
+
+        frm = 0 if start is None else int(start)
+        to = 9999999999999 if end is None else int(end)
+        lim = limit if limit is not None else 50
+        sort = order if order in ("ASC", "DESC") else "DESC"
+
+        mid_filter = ""
+        if measurements:
+            mids = [f'"{str(m)}"' for m in measurements]
+            mid_filter = f"mid: [{', '.join(mids)}],"
+
+        q = f"""
+        {{
+          measurementPeriods(
+            sid: "{sid}",
+            {mid_filter}
+            from: {frm},
+            to: {to},
+            sort: {sort},
+            limit: {lim}
+          ) {{
+            mid
+            minTs
+            maxTs
+            sampleRate
+          }}
+        }}
+        """
+
+        data = await self._gql(q)
+        rows = data.get("measurementPeriods", [])
+
+        return [
+            GIHistoryMeasurement(
+                Id=r["mid"],
+                AbsoluteStart=r["minTs"],
+                LastTimeStamp=r["maxTs"],
+                SampleRateHz=r.get("sampleRate", 0),
+                SourceId=sid,
+            )
+            for r in rows
+        ]
 
     async def list_variables(self) -> List[Dict[str, Any]]:
         await self._bearer()
@@ -185,22 +239,37 @@ class CloudGQLDriver(BaseDriver):
 
     # --- history (unchanged REST) -------------------------------------
 
-    async def fetch_history(
-        self,
-        source_id: Union[str, int, UUID],
-        measurement_id: Union[str, int, UUID],
-        var_ids: List[UUID],
-        *,
-        start_ms: float = 0,
-        end_ms: float = 0,
-        points: int = 2048,
-    ) -> pd.DataFrame:
-        variables = [VarSelector(SID=source_id, VID=v) for v in var_ids]
-        req = BufferRequest(Start=start_ms, End=end_ms, Points=points, Variables=variables)
-        r = await self.http.post("/history/data", json=req.model_dump(by_alias=True, mode="json"))
-        ts = BufferSuccess.model_validate(r.json()).first_timeseries()
-        return _to_frame_from_ts(ts, var_ids)
+    # async def fetch_history(
+    #         self,
+    #         selectors: List[VarSelector],
+    #         *,
+    #         measurement_id: UUID,
+    #         start_ms: float = 0,
+    #         end_ms: float = 0,
+    #         points: int = 2048,
+    # ) -> pd.DataFrame:
+    #     variables = selectors
+    #     var_ids = [s.VID for s in selectors]
+    #     req = BufferRequest(Start=start_ms, End=end_ms, Points=points, Variables=variables)
+    #     r = await self.http.post("/kafka/data", json=req.model_dump(by_alias=True, mode="json"))
+    #     ts = BufferSuccess.model_validate(r.json()).first_timeseries()
+    #     return _to_frame_from_ts(ts, var_ids)
 
+    async def fetch_history(
+            self,
+            selectors: List[VarSelector],
+            *,
+            measurement_id: UUID,
+            start_ms: float = 0,
+            end_ms: float = 0,
+            points: int = 2048,
+    ) -> pd.DataFrame:
+            return await self.fetch_buffer(
+                selectors,
+                start_ms=start_ms,
+                end_ms=end_ms,
+                points=points,
+            )
 
     async def _stream_name(self, sid: Union[str, UUID, int]) -> str:
         s = str(sid)

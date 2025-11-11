@@ -192,9 +192,9 @@ async def import_data():
             
 async def history():
     #BASE = "http://10.1.50.36:8090"
-    client = get_client(CONFIGS["qcore"])
+    client = get_client(CONFIGS["cloud"])
 
-    src = client.list_history_sources()[0]
+    src = client.list_history_sources()[5]
     logger.info(f"Selected Buffer source: {src}")
 
     measurements = client.list_history_measurements(src.id)
@@ -202,18 +202,27 @@ async def history():
         logger.info(f"Measurement {idx}: {meas}")
     selected_meas = measurements[0]
 
-    variables = selected_meas.variables
+    variables = selected_meas.vars
+
 
     selectors: List[VarSelector] = [
         VarSelector(SID=selected_meas.source_id, VID=v.id)
         for v in variables
     ]
+
     df = client.fetch_history(
         selectors,
         measurement_id=selected_meas.id,
         start_ms=selected_meas.absolute_start,
         end_ms=selected_meas.last_ts,
     )
+
+    # df = client.fetch_history(
+    #     selectors,
+    #     measurement_id=selected_meas.id,
+    #     start_ms=selected_meas.absolute_start,
+    #     end_ms=selected_meas.last_ts,
+    # )
     print(df.head())
     df.to_csv("debug_export_history_measurement.csv")
 

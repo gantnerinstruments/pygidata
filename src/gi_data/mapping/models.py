@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Union, Dict, Any, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 class VarSelector(BaseModel):
     SID: Union[UUID, str, int] | None = None
@@ -145,30 +145,59 @@ class GIHistoryVariable(BaseModel):
 
 
 class GIHistoryMeasurement(BaseModel):
-    id: Union[UUID, int] = Field(alias="Id")
-    name: str = Field(alias="Name")
+    id: Union[UUID, int, str] = Field(alias="Id")
     absolute_start: float = Field(alias="AbsoluteStart")
     last_ts: float = Field(alias="LastTimeStamp")
-
-    available_time_sec: float = Field(alias="AvailableTimeSec")
-    cfg_checksum: str = Field(alias="CfgCheckSum")
-    data_storage: str = Field(alias="DataStorage")
-    index: int = Field(alias="Index")
-    is_removable: bool = Field(alias="IsRemovable")
-    kind: str = Field(alias="Kind")
-    max_time_sec: float = Field(alias="MaxTimeSec")
     sample_rate_hz: float = Field(alias="SampleRateHz")
     source_id: Union[UUID, int, str] = Field(alias="SourceId")
-    start_date: str = Field(alias="StartDate")
-    updated: bool = Field(alias="Updated")
-    variables: List[GIHistoryVariable] = Field(alias="Variables")
+
+    # Optional (local-only metadata)
+    name: Optional[str] = Field(alias="Name", default=None)
+    available_time_sec: Optional[float] = Field(alias="AvailableTimeSec", default=None)
+    cfg_checksum: Optional[str] = Field(alias="CfgCheckSum", default=None)
+    data_storage: Optional[str] = Field(alias="DataStorage", default=None)
+    index: Optional[int] = Field(alias="Index", default=None)
+    is_removable: Optional[bool] = Field(alias="IsRemovable", default=None)
+    kind: Optional[str] = Field(alias="Kind", default=None)
+    max_time_sec: Optional[float] = Field(alias="MaxTimeSec", default=None)
+    start_date: Optional[str] = Field(alias="StartDate", default=None)
+    updated: Optional[bool] = Field(alias="Updated", default=None)
+
+    # Present on local only; cloud = None until resolved
+    variables: Optional[List[GIHistoryVariable]] = Field(alias="Variables", default=None)
+
     internal_id: Optional[str] = Field(alias="_id", default=None)
+
+    # Internal reference to client, set by DataClient.list_history_measurements
+    _client: Optional["GIDataClient"] = PrivateAttr(default=None)
 
     model_config = dict(
         validate_by_name=True,
-        frozen=True,
+        frozen=False,
         extra="ignore",
     )
+
+    def attach_client(self, client: "GIDataClient") -> "GIHistoryMeasurement":
+        self._client = client
+        return self
+
+    @property
+    def vars(self) -> List[GIHistoryVariable]:
+        # Local case
+        if self.variables is not None:
+            return self.variables
+
+        # Cloud case -> fetch need to load variables since gql doesnt include them
+        if not self._client:
+            raise RuntimeError(
+                "No client attached to measurement. "
+                "Call .attach_client(client) in DataClient.list_history_measurements."
+            )
+
+        vars = self._client.list_stream_variables(self.source_id)
+        # cache for next access
+        self.variables = vars
+        return vars
 
 class CSVSettings(BaseModel):
     HeaderText: Optional[str] = None

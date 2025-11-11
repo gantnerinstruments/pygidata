@@ -23,7 +23,7 @@ from gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable,
 from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
-PACKAGE_PREFIX = "src.src"
+PACKAGE_PREFIX = "gi_data"
 # ------------------------------------------------------------------ #
 # helpers                                                            #
 # ------------------------------------------------------------------ #
@@ -89,9 +89,12 @@ class GIDataClient:
         buffer_driver = CloudGQLDriver(self._auth, self._http) if cloud_env \
             else HTTPTimeSeriesDriver(self._auth, self._http, None, "buffer")
 
+        history_driver = CloudGQLDriver(self._auth, self._http) if cloud_env \
+            else HTTPTimeSeriesDriver(self._auth, self._http, None, "history")
+
         self._drivers: Dict[str, BaseDriver] = {
             "buffer": buffer_driver,  # ← cloud => GQL Raw
-            "history": HTTPTimeSeriesDriver(self._auth, self._http, None, "history"),
+            "history": history_driver,
         }
 
         self._ws_driver: Optional[WebSocketDriver] = None
@@ -148,7 +151,8 @@ class GIDataClient:
             add_meas_metadata: bool = False,
             meas_metadata_filter: Optional[List[dict]] = None,
     ) -> List[GIHistoryMeasurement]:
-        return _run(
+
+        result = _run(
             self._drivers["history"].list_measurements(
                 source_id,
                 start=start,
@@ -161,6 +165,9 @@ class GIDataClient:
                 meas_metadata_filter=meas_metadata_filter,
             )
         )
+
+        # Attach client to enable selected_meas.vars lazy variable resolution
+        return [m.attach_client(self) for m in result]
 
     def fetch_history(
             self,
