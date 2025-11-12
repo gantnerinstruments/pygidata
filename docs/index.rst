@@ -6,7 +6,7 @@
 GI.modules (python)
 ===================
 
-GIModules is a Python wrapper for the Gantner Instruments Cloud and QCore APIs.
+pygidata is a Python wrapper for the Gantner Instruments Data APIs.
 
 It simplifies access to the measurements by providing an interface that encapsulates the underlying
 REST and GraphQL API's and its underlying mappings.
@@ -17,7 +17,7 @@ enabling efficient integration with Gantner Instruments systems.
 To help you get started quickly, we recommend using the provided JupyterLab environment, which supports interactive development and testing.
 See the `Overview` section for setup instructions.
 
-The package section describes the modules and submodules of the gimodules package.
+The package section describes the modules and submodules of the pygidata package.
 
 .. toctree::
    :maxdepth: 2
@@ -26,4 +26,4 @@ The package section describes the modules and submodules of the gimodules packag
    overview
    installation
    Usage
-   source/gimodules
+   source/pygidata
