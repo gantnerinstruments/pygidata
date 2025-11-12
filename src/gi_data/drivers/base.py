@@ -9,8 +9,6 @@ import pandas as pd
 from gi_data.mapping.models import LogSettings, CSVSettings, VarSelector
 
 
-
-
 class BaseDriver(abc.ABC):
     """
     Abstract transport driver.
@@ -75,35 +73,38 @@ class BaseDriver(abc.ABC):
         raise NotImplementedError
 
     async def export_data(
-        self,
-        selectors: List["VarSelector"],
-        *,
-        start_ms: float,
-        end_ms: float,
-        format: Literal["csv","udbf"],
-        points: Optional[int] = None,
-        timezone: str = "UTC",
-        aggregation: Optional[str] = None,
-        date_format: Optional[str] = None,
-        filename: Optional[str] = None,
-        precision: int = -1,
-        csv_settings: Optional["CSVSettings"] = None,
-        log_settings: Optional["LogSettings"] = None,
-        target: Optional[str] = None,
+            self,
+            selectors: List["VarSelector"],
+            *,
+            start_ms: float,
+            end_ms: float,
+            format: Literal["csv", "udbf"],
+            points: Optional[int] = None,
+            timezone: str = "UTC",
+            aggregation: Optional[str] = None,
+            date_format: Optional[str] = None,
+            filename: Optional[str] = None,
+            precision: int = -1,
+            csv_settings: Optional["CSVSettings"] = None,
+            log_settings: Optional["LogSettings"] = None,
+            target: Optional[str] = None,
     ) -> bytes:
         raise NotImplementedError
 
     def supported_exports(self) -> set[str]:
         return {"csv", "udbf"}
 
-    def import_csv(self, source_id, source_name, file_bytes, target, csv_settings, add_time_series, retention_time_sec,
+    def import_csv(self, source_id, source_name, file_bytes, target,
+                   csv_settings, add_time_series, retention_time_sec,
                    time_offset_sec, sample_rate, auto_create_metadata, session_timeout_sec):
         pass
 
-    def import_udbf(self, source_id, source_name, file_bytes, target, add_time_series, sample_rate,
+    def import_udbf(self, source_id, source_name, file_bytes,
+                    target, add_time_series, sample_rate,
                     auto_create_metadata, session_timeout_sec):
         pass
 
-    def export(self, selectors, start_ms, end_ms, format, points, timezone, resolution, data_type, aggregation,
+    def export(self, selectors, start_ms, end_ms, format, points,
+               timezone, resolution, data_type, aggregation,
                date_format, filename, precision, csv_settings, log_settings, target):
         pass

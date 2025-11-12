@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, MutableMapping
-import logging
 
 import httpx
 
 from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
+
 
 class AuthError(RuntimeError):
     """Raised if login or refresh cannot obtain a valid access token."""
@@ -50,7 +51,7 @@ class AuthManager:
         if access_token:
             self._token = access_token
             self._refresh = access_token
-            self._expires = datetime.max.replace(tzinfo=timezone.utc) # unlimited
+            self._expires = datetime.max.replace(tzinfo=timezone.utc)  # unlimited
 
     async def bearer(self) -> str | None:
         """
@@ -116,16 +117,16 @@ class AuthManager:
         self._expires = datetime.now(tz=timezone.utc) + timedelta(seconds=lifetime)
 
     def is_cloud_environment(self) -> bool:
-            # cloud
-            try:
-                body = self._rpc_post("ConfigAPI.GetGlobalSettings", {})
-                return body["Config"].get("CloudEnvironment", False)
-            except httpx.HTTPStatusError:
-                pass  # fallback
+        # cloud
+        try:
+            body = self._rpc_post("ConfigAPI.GetGlobalSettings", {})
+            return body["Config"].get("CloudEnvironment", False)
+        except httpx.HTTPStatusError:
+            pass  # fallback
 
-            # controller fallback
-            try:
-                body = self._rpc_post("AdminAPI.GetGlobalSettings", {})
-                return body["Config"].get("CloudEnvironment", False)
-            except httpx.HTTPStatusError as e:
-                raise AuthError("Unable to determine environment: both RPC endpoints failed") from e
+        # controller fallback
+        try:
+            body = self._rpc_post("AdminAPI.GetGlobalSettings", {})
+            return body["Config"].get("CloudEnvironment", False)
+        except httpx.HTTPStatusError as e:
+            raise AuthError("Unable to determine environment: both RPC endpoints failed") from e

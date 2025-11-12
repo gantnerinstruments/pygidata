@@ -1,5 +1,6 @@
 import logging
 
+
 def setup_module_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """
     Configures and returns a logger for the given module name.
@@ -24,6 +25,7 @@ def setup_module_logger(name: str, level: int = logging.INFO) -> logging.Logger:
         logger.addHandler(handler)
 
     return logger
+
 
 def set_global_log_level(level: int):
     """

@@ -10,14 +10,14 @@ from typing import (
 )
 from uuid import UUID
 
+from gi_data.infra.auth import AuthManager
+from gi_data.infra.http import AsyncHTTP
+from gi_data.infra.ws import AsyncWS
 from gi_data.utils.logging import setup_module_logger
 from gi_data.ws.enums import (
     GInsWSMessageTypes as MT,
     GInsWSWorkerTypes as WT,
 )
-from gi_data.infra.ws import AsyncWS
-from gi_data.infra.http import AsyncHTTP
-from gi_data.infra.auth import AuthManager
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
 
@@ -35,13 +35,13 @@ class WebSocketDriver:
         self._http = http
 
     async def stream_online(
-        self,
-        var_ids: Sequence[UUID],
-        *,
-        interval_ms: int = 1,
-        extended: bool = True,
-        on_change: bool = False,
-        precision: int = -1,
+            self,
+            var_ids: Sequence[UUID],
+            *,
+            interval_ms: int = 1,
+            extended: bool = True,
+            on_change: bool = False,
+            precision: int = -1,
     ) -> AsyncGenerator[dict[Any, Any] | dict[str, UUID | Any], None]:
         """
         Yield a dict {uuid: value} for every OnlineData publish frame.
@@ -74,13 +74,13 @@ class WebSocketDriver:
             yield payload
 
     async def _subscribe_online(
-        self,
-        var_ids: Sequence[UUID],
-        *,
-        interval_ms: int,
-        extended: bool,
-        on_change: bool,
-        precision: int,
+            self,
+            var_ids: Sequence[UUID],
+            *,
+            interval_ms: int,
+            extended: bool,
+            on_change: bool,
+            precision: int,
     ) -> None:
         cfg = {
             "IntervalMs": interval_ms,
@@ -99,12 +99,11 @@ class WebSocketDriver:
         await self._ws.send(header, cfg)
         logger.debug("Subscribed OnlineData %s (cfg=%s)", var_ids, cfg)
 
-
     async def publish(
-        self,
-        data: Mapping[UUID, float] | MutableMapping[str, float] | Iterable[tuple[UUID, float]],
-        *,
-        function: str = "write",
+            self,
+            data: Mapping[UUID, float] | MutableMapping[str, float] | Iterable[tuple[UUID, float]],
+            *,
+            function: str = "write",
     ) -> None:
         """
         Send a *publish* frame.

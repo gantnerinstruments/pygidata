@@ -1,37 +1,42 @@
 # src/src/drivers/cloud_gql.py  (no CloudRequest dependency)
 
 from __future__ import annotations
-import asyncio, math
+
+import math
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Sequence, Tuple, Union, Optional, Literal, Iterable
+from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable
 from uuid import UUID
+
 import pandas as pd
 
+from gi_data.mapping.enums import Resolution, DataType
 from gi_data.mapping.models import (
-    GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, BufferSuccess, LogSettings, CSVSettings,
+    GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, LogSettings, CSVSettings,
     CSVImportSettings, GIHistoryMeasurement
 )
 from .base import BaseDriver
-from gi_data.mapping.enums import Resolution, DataType
 
 
 def _now_ms() -> int:
     return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
 
+
 def _window(start_ms: float, end_ms: float) -> tuple[int, int]:
     to_ms = _now_ms() if end_ms == 0 else (_now_ms() + int(end_ms) if end_ms < 0 else int(end_ms))
-    frm  = to_ms + int(start_ms) if start_ms <= 0 else int(start_ms)
+    frm = to_ms + int(start_ms) if start_ms <= 0 else int(start_ms)
     if frm >= to_ms: frm = to_ms - 1
     return frm, to_ms
 
+
 def _to_frame_from_raw(rows: List[List[Any]], order_vids: Sequence[UUID]) -> pd.DataFrame:
-    ts_ms  = pd.Series([int(r[0]) for r in rows], dtype="int64")
-    nanos  = pd.Series([int(r[1]) for r in rows], dtype="int64")
-    idx    = pd.to_datetime(ts_ms, unit="ms", utc=True) + pd.to_timedelta(nanos, unit="ns")
+    ts_ms = pd.Series([int(r[0]) for r in rows], dtype="int64")
+    nanos = pd.Series([int(r[1]) for r in rows], dtype="int64")
+    idx = pd.to_datetime(ts_ms, unit="ms", utc=True) + pd.to_timedelta(nanos, unit="ns")
     idx.name = "time"
-    vals = {str(vid): [r[i+2] for r in rows] for i, vid in enumerate(order_vids)}
+    vals = {str(vid): [r[i + 2] for r in rows] for i, vid in enumerate(order_vids)}
     return pd.DataFrame(vals, index=idx)
+
 
 def _to_frame_from_ts(ts: TimeSeries, order: Sequence[UUID]) -> pd.DataFrame:
     start_s = ts.AbsoluteStart / 1_000.0
@@ -39,6 +44,7 @@ def _to_frame_from_ts(ts: TimeSeries, order: Sequence[UUID]) -> pd.DataFrame:
     idx = pd.to_datetime([start_s + i * delta_s for i in range(len(ts.Values[0]))], unit="s", utc=True)
     idx.name = "time"
     return pd.DataFrame({str(uid): ts.Values[i] for i, uid in enumerate(order)}, index=idx)
+
 
 class CloudGQLDriver(BaseDriver):
     """Data-API implementation for GI.cloud."""
@@ -113,10 +119,9 @@ class CloudGQLDriver(BaseDriver):
             for v in src.get("Variables", []):
                 out.append(GIStreamVariable.model_validate({
                     "Id": v["Id"], "Name": v["Name"], "Index": v["Index"], "GQLId": v.get("GQLId"),
-                    "Unit": v.get("Unit",""), "DataFormat": v.get("DataFormat",""), "sid": sid
+                    "Unit": v.get("Unit", ""), "DataFormat": v.get("DataFormat", ""), "sid": sid
                 }))
         return out
-
 
     async def list_measurements(
             self,
@@ -201,12 +206,12 @@ class CloudGQLDriver(BaseDriver):
     # --- buffer (cloud => GraphQL Raw) --------------------------------
 
     async def fetch_buffer(
-        self,
-        selectors: List[VarSelector],
-        *,
-        start_ms: float = -20_000,
-        end_ms: float = 0,
-        points: int = 2048,
+            self,
+            selectors: List[VarSelector],
+            *,
+            start_ms: float = -20_000,
+            end_ms: float = 0,
+            points: int = 2048,
     ) -> pd.DataFrame:
         frm, to = _window(start_ms, end_ms)
         by_sid: Dict[str, List[UUID]] = defaultdict(list)
@@ -264,12 +269,12 @@ class CloudGQLDriver(BaseDriver):
             end_ms: float = 0,
             points: int = 2048,
     ) -> pd.DataFrame:
-            return await self.fetch_buffer(
-                selectors,
-                start_ms=start_ms,
-                end_ms=end_ms,
-                points=points,
-            )
+        return await self.fetch_buffer(
+            selectors,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            points=points,
+        )
 
     async def _stream_name(self, sid: Union[str, UUID, int]) -> str:
         s = str(sid)
@@ -294,20 +299,20 @@ class CloudGQLDriver(BaseDriver):
         return meta
 
     async def export(  # csv via GQL exportCSV, udbf via /history/data
-        self, selectors: List[VarSelector], *,
-        start_ms: float, end_ms: float,
-        format: Literal["csv","udbf"],
-        points: Optional[int] = 2048,
-        timezone: str = "UTC",
-        resolution: Optional[Resolution] = None,
-        data_type: Optional[DataType] = None, # ignored on cloud
-        aggregation: Optional[str] = "avg",
-        date_format: Optional[str] = "%Y-%m-%dT%H:%M:%S",
-        filename: Optional[str] = None,
-        precision: int = -1,
-        csv_settings: Optional[CSVSettings] = None,  # ignored on cloud
-        log_settings: Optional[LogSettings] = None,
-        target: Optional[str] = None,                # ignored on cloud
+            self, selectors: List[VarSelector], *,
+            start_ms: float, end_ms: float,
+            format: Literal["csv", "udbf"],
+            points: Optional[int] = 2048,
+            timezone: str = "UTC",
+            resolution: Optional[Resolution] = None,
+            data_type: Optional[DataType] = None,  # ignored on cloud
+            aggregation: Optional[str] = "avg",
+            date_format: Optional[str] = "%Y-%m-%dT%H:%M:%S",
+            filename: Optional[str] = None,
+            precision: int = -1,
+            csv_settings: Optional[CSVSettings] = None,  # ignored on cloud
+            log_settings: Optional[LogSettings] = None,
+            target: Optional[str] = None,  # ignored on cloud
     ) -> bytes:
         frm, to = _window(start_ms, end_ms)
         if format == "csv":
@@ -317,8 +322,8 @@ class CloudGQLDriver(BaseDriver):
             chunks = []
             for sid, vids in by_sid.items():
                 fields = await self._vid_to_fieldnames(sid, vids)
-                meta   = await self._var_meta(sid)
-                sname  = await self._stream_name(sid)
+                meta = await self._var_meta(sid)
+                sname = await self._stream_name(sid)
                 for vid, f in zip(vids, fields):
                     m = meta.get(str(vid), {"name": str(vid), "unit": ""})
                     hdr = '", "'.join([m["name"], sname, aggregation or "avg", m["unit"]])
@@ -348,16 +353,16 @@ class CloudGQLDriver(BaseDriver):
         return r.content
 
     async def export_udbf(
-        self,
-        selectors: List[VarSelector],
-        *,
-        start_ms: float,
-        end_ms: float,
-        points: int = 0,
-        log_settings: Optional[LogSettings] = None,
-        target: Optional[str] = None,
-        timezone: str = "UTC",
-        precision: int = -1,
+            self,
+            selectors: List[VarSelector],
+            *,
+            start_ms: float,
+            end_ms: float,
+            points: int = 0,
+            log_settings: Optional[LogSettings] = None,
+            target: Optional[str] = None,
+            timezone: str = "UTC",
+            precision: int = -1,
     ) -> bytes:
         frm, to = _window(start_ms, end_ms)
         req = BufferRequest(
@@ -376,19 +381,19 @@ class CloudGQLDriver(BaseDriver):
         return r.content
 
     async def import_csv(
-        self,
-        source_id: str,
-        source_name: str,
-        file_bytes: bytes,
-        *,
-        target: str = "stream",
-        csv_settings: Optional[CSVImportSettings] = None,
-        add_time_series: bool = False,
-        retention_time_sec: int = 0,
-        time_offset_sec: int = 0,
-        sample_rate: int = -1,
-        auto_create_metadata: bool = True,
-        session_timeout_sec: int = 300,
+            self,
+            source_id: str,
+            source_name: str,
+            file_bytes: bytes,
+            *,
+            target: str = "stream",
+            csv_settings: Optional[CSVImportSettings] = None,
+            add_time_series: bool = False,
+            retention_time_sec: int = 0,
+            time_offset_sec: int = 0,
+            sample_rate: int = -1,
+            auto_create_metadata: bool = True,
+            session_timeout_sec: int = 300,
     ) -> str:
         param = {
             "Type": "csv",
@@ -413,16 +418,16 @@ class CloudGQLDriver(BaseDriver):
         return str(sid)
 
     async def import_udbf(
-        self,
-        source_id: str,
-        source_name: str,
-        file_bytes: bytes,
-        *,
-        target: str = "stream",
-        add_time_series: bool = False,
-        sample_rate: int = -1,
-        auto_create_metadata: bool = True,
-        session_timeout_sec: int = 300,
+            self,
+            source_id: str,
+            source_name: str,
+            file_bytes: bytes,
+            *,
+            target: str = "stream",
+            add_time_series: bool = False,
+            sample_rate: int = -1,
+            auto_create_metadata: bool = True,
+            session_timeout_sec: int = 300,
     ) -> str:
         param = {
             "Type": "udbf",

@@ -18,8 +18,10 @@ from gi_data.drivers.ws_stream import WebSocketDriver
 from gi_data.infra.auth import AuthManager
 from gi_data.infra.http import AsyncHTTP
 from gi_data.mapping.enums import Resolution, DataType, DataFormat
-from gi_data.mapping.models import GIStream, GIStreamVariable, GIOnlineVariable, VarSelector, CSVSettings, \
-    LogSettings, CSVImportSettings, GIHistoryMeasurement
+from gi_data.mapping.models import (GIStream, GIStreamVariable,
+                                    GIOnlineVariable, VarSelector,
+                                    CSVSettings, LogSettings,
+                                    CSVImportSettings, GIHistoryMeasurement)
 from gi_data.utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
@@ -291,10 +293,12 @@ class GIDataClient:
 
     # convenience
     def export_csv(self, selectors, *, start_ms, end_ms, **kw) -> bytes:
-        return self.export(selectors, start_ms=start_ms, end_ms=end_ms, format=DataFormat.CSV, **kw)
+        return self.export(selectors, start_ms=start_ms, end_ms=end_ms,
+                           format=DataFormat.CSV, **kw)
 
     def export_udbf(self, selectors, *, start_ms, end_ms, **kw) -> bytes:
-        return self.export(selectors, start_ms=start_ms, end_ms=end_ms, format=DataFormat.UDBF, **kw)
+        return self.export(selectors, start_ms=start_ms, end_ms=end_ms,
+                           format=DataFormat.UDBF, **kw)
 
     # --------------------------- import ------------------------------- #
     def import_data(

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import List, Union, Dict, Any, Optional
+from typing import List, Union, Optional, TYPE_CHECKING
 from uuid import UUID
+
 from pydantic import BaseModel, Field, PrivateAttr
+if TYPE_CHECKING:
+    from gi_data import GIDataClient
+
 
 class VarSelector(BaseModel):
     SID: Union[UUID, str, int] | None = None
     VID: UUID | str
-    Selector: str = Field(default="latest") # latest=buffer | or measurement ID
+    Selector: str = Field(default="latest")  # latest=buffer | or measurement ID
 
     class Config:
         validate_by_name = True
@@ -22,12 +26,13 @@ class BufferRequest(BaseModel):
     Type: str = "equidistant"
     Format: str = "json"
     Precision: int = -1
-    TimeZone: str = "UTC" # Europe/Vienna
+    TimeZone: str = "UTC"  # Europe/Vienna
     TimeOffset: int = 0
 
     class Config:
         validate_by_name = True
         frozen = True
+
 
 class TimeSeries(BaseModel):
     Type: str
@@ -90,6 +95,7 @@ class GIStreamVariable(BaseModel):
         validate_by_name = True
         frozen = True
 
+
 class GIOnlineVariable(BaseModel):
     id: UUID = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -108,6 +114,7 @@ class GIOnlineVariable(BaseModel):
         validate_by_name = True
         frozen = True
         extra = "ignore"
+
 
 class HistoryRequest(BaseModel):
     Start: float = 0
@@ -199,6 +206,7 @@ class GIHistoryMeasurement(BaseModel):
         self.variables = vars
         return vars
 
+
 class CSVSettings(BaseModel):
     HeaderText: Optional[str] = None
     AddColumnHeader: bool = True
@@ -213,6 +221,7 @@ class CSVSettings(BaseModel):
 
     model_config = dict(validate_by_name=True, frozen=True)
 
+
 class CSVImportSettings(BaseModel):
     ColumnSeparator: str = ";"
     DecimalSeparator: str = ","
@@ -226,6 +235,7 @@ class CSVImportSettings(BaseModel):
     DateTimeFmtColumn1: str = "%Y-%m-%d %H:%M:%S.%F"
     DateTimeFmtColumn2: str = ""
     DateTimeFmtColumn3: str = ""
+
 
 class LogSettings(BaseModel):
     SourceID: str

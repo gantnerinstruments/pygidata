@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import logging
-from datetime import timezone
-from typing import Any, Dict, List, Tuple, Union, Optional, Literal, Iterable
+from typing import Dict, List, Union, Optional, Literal, Iterable
 from uuid import UUID
 
 import pandas as pd
 
-from .base import BaseDriver
 from gi_data.mapping.models import (
     BufferRequest,
     BufferSuccess,
@@ -17,10 +15,12 @@ from gi_data.mapping.models import (
     VarSelector, HistorySuccess, GIHistoryMeasurement, GIOnlineVariable, CSVSettings, LogSettings, CSVImportSettings,
     HistoryRequest,
 )
+from .base import BaseDriver
 from ..mapping.enums import Resolution, DataType
 from ..utils.logging import setup_module_logger
 
 logger = setup_module_logger(__name__, level=logging.DEBUG)
+
 
 class HTTPTimeSeriesDriver(BaseDriver):
     """
@@ -73,17 +73,17 @@ class HTTPTimeSeriesDriver(BaseDriver):
         return [GIStreamVariable.model_validate(r | {"sid": sid}) for r in raw]
 
     async def list_measurements(
-        self,
-        sid: Union[str, int, UUID],
-        *,
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-        order: str = "DESC",
-        limit: Optional[int] = None,
-        measurements: Optional[Iterable[Union[str, UUID]]] = None,
-        add_var_mapping: bool = True,
-        add_meas_metadata: bool = False,
-        meas_metadata_filter: Optional[List[dict]] = None,
+            self,
+            sid: Union[str, int, UUID],
+            *,
+            start: Optional[int] = None,
+            end: Optional[int] = None,
+            order: str = "DESC",
+            limit: Optional[int] = None,
+            measurements: Optional[Iterable[Union[str, UUID]]] = None,
+            add_var_mapping: bool = True,
+            add_meas_metadata: bool = False,
+            meas_metadata_filter: Optional[List[dict]] = None,
     ) -> List[GIHistoryMeasurement]:
 
         if self._root != "history":
@@ -179,20 +179,20 @@ class HTTPTimeSeriesDriver(BaseDriver):
         return _to_frame(ts, [UUID(str(v.VID)) for v in vars_])
 
     async def export(  # maps to /{root}/data
-        self, selectors: List[VarSelector], *,
-        start_ms: float, end_ms: float,
-        format: Literal["csv","udbf"],
-        points: Optional[int] = 2048,
-        timezone: str = "UTC",
-        resolution: Optional[Resolution] = None,# ignored
-        data_type: Optional[DataType] = None,# ignored
-        aggregation: Optional[str] = None,   # ignored
-        date_format: Optional[str] = None,   # ignored
-        filename: Optional[str] = None,      # ignored
-        precision: int = -1,
-        csv_settings: Optional[CSVSettings] = None,
-        log_settings: Optional[LogSettings] = None,
-        target: Optional[str] = None,        # local-only for csv -> "stream"/"record"
+            self, selectors: List[VarSelector], *,
+            start_ms: float, end_ms: float,
+            format: Literal["csv", "udbf"],
+            points: Optional[int] = 2048,
+            timezone: str = "UTC",
+            resolution: Optional[Resolution] = None,  # ignored
+            data_type: Optional[DataType] = None,  # ignored
+            aggregation: Optional[str] = None,  # ignored
+            date_format: Optional[str] = None,  # ignored
+            filename: Optional[str] = None,  # ignored
+            precision: int = -1,
+            csv_settings: Optional[CSVSettings] = None,
+            log_settings: Optional[LogSettings] = None,
+            target: Optional[str] = None,  # local-only for csv -> "stream"/"record"
     ) -> bytes:
         fmt = "csv" if format == "csv" else "udbf"
         req = BufferRequest(
@@ -210,19 +210,19 @@ class HTTPTimeSeriesDriver(BaseDriver):
         return r.content
 
     async def import_csv(
-        self,
-        source_id: str,
-        source_name: str,
-        file_bytes: bytes,
-        *,
-        target: str = "stream",
-        csv_settings: Optional[CSVImportSettings] = None,
-        add_time_series: bool = False,
-        retention_time_sec: int = 0,
-        time_offset_sec: int = 0,
-        sample_rate: int = -1,
-        auto_create_metadata: bool = True,
-        session_timeout_sec: int = 300,
+            self,
+            source_id: str,
+            source_name: str,
+            file_bytes: bytes,
+            *,
+            target: str = "stream",
+            csv_settings: Optional[CSVImportSettings] = None,
+            add_time_series: bool = False,
+            retention_time_sec: int = 0,
+            time_offset_sec: int = 0,
+            sample_rate: int = -1,
+            auto_create_metadata: bool = True,
+            session_timeout_sec: int = 300,
     ) -> str:
         param = {
             "Type": "csv",
@@ -245,16 +245,16 @@ class HTTPTimeSeriesDriver(BaseDriver):
         return str(sid)
 
     async def import_udbf(
-        self,
-        source_id: str,
-        source_name: str,
-        file_bytes: bytes,
-        *,
-        target: str = "stream",
-        add_time_series: bool = False,
-        sample_rate: int = -1,
-        auto_create_metadata: bool = True,
-        session_timeout_sec: int = 300,
+            self,
+            source_id: str,
+            source_name: str,
+            file_bytes: bytes,
+            *,
+            target: str = "stream",
+            add_time_series: bool = False,
+            sample_rate: int = -1,
+            auto_create_metadata: bool = True,
+            session_timeout_sec: int = 300,
     ) -> str:
         param = {
             "Type": "udbf",
@@ -274,6 +274,7 @@ class HTTPTimeSeriesDriver(BaseDriver):
         await self.http.delete(f"/history/data/import/{sid}")
         return str(sid)
 
+
 def _to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
     start_ns = int(ts.Start * 1_000_000)
     dt_ns = int(ts.Delta * 1_000_000)
@@ -281,5 +282,3 @@ def _to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
 
     data = {str(uid): ts.Values[i] for i, uid in enumerate(order)}
     return pd.DataFrame(data, index=idx_ns).rename_axis("timestamp_ns")
-
-

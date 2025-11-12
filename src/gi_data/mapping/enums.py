@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Resolution(Enum):
     MONTH = "MONTH"
     WEEK = "WEEK"
