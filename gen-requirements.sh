@@ -4,7 +4,7 @@ set -euo pipefail
 REQ_IN="./requirements.in"
 
 # Generate requirements from package
-pipreqs src/gi_data/ --force --savepath "$REQ_IN"
+pipreqs src/ --force --savepath "$REQ_IN"
 
 # remove pinned version (which is latest)
 sed -E -i 's/[[:space:]]*(==|>=|<=|!=|~=|>|<).*$//' "$REQ_IN"
