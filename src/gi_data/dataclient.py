@@ -113,10 +113,10 @@ class GIDataClient:
 
     # --------------------------- buffer ------------------------------ #
     def list_buffer_sources(self) -> List[GIStream]:
-        return _run(self._drivers["buffer"].list_sources())
+        return _run(self._drivers["buffer"].list_buffer_sources())
 
-    def list_stream_variables(self, source_id: Union[UUID, int]) -> List[GIStreamVariable]:
-        return _run(self._drivers["buffer"].list_stream_variables(source_id))
+    def list_buffer_variables(self, source_id: Union[UUID, int]) -> List[GIStreamVariable]:
+        return _run(self._drivers["buffer"].list_buffer_variables(source_id))
 
     def fetch_buffer(
             self,
@@ -135,10 +135,10 @@ class GIDataClient:
     # --------------------------- history ----------------------------- #
 
     def list_history_sources(self) -> List[GIStream]:
-        return _run(self._drivers["history"].list_sources())
+        return _run(self._drivers["history"].list_buffer_sources())
 
     def list_history_variables(self, source_id: Union[UUID, int]):
-        return _run(self._drivers["history"].list_stream_variables(source_id))
+        return _run(self._drivers["history"].list_buffer_variables(source_id))
 
     def list_history_measurements(
             self,

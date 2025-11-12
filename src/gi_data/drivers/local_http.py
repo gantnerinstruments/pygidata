@@ -58,11 +58,11 @@ class HTTPTimeSeriesDriver(BaseDriver):
         await self.http.post("/online/data", json=payload)
 
     # -------- Structure ---------------------------------------------
-    async def list_sources(self) -> List[GIStream]:
+    async def list_buffer_sources(self) -> List[GIStream]:
         res = await self.http.get(f"/{self._root}/structure/sources")
         return [GIStream.model_validate(d) for d in res.json()["Data"]]
 
-    async def list_stream_variables(
+    async def list_buffer_variables(
             self, sid: Union[str, int, UUID]
     ) -> List[GIStreamVariable]:
         res = await self.http.get(f"/{self._root}/structure/sources/{sid}/variables")

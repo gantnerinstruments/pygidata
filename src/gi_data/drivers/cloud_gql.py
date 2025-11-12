@@ -103,13 +103,13 @@ class CloudGQLDriver(BaseDriver):
 
     # --- structure -----------------------------------------------------
 
-    async def list_sources(self) -> List[GIStream]:
+    async def list_buffer_sources(self) -> List[GIStream]:
         await self._bearer()
         r = await self.http.get("/kafka/structure/sources")
         data = r.json().get("Data", [])
         return [GIStream.model_validate(s) for s in data]
 
-    async def list_stream_variables(self, source_id: Union[str, int, UUID]) -> List[GIStreamVariable]:
+    async def list_buffer_variables(self, source_id: Union[str, int, UUID]) -> List[GIStreamVariable]:
         await self._bearer()
         body = {"AddVarMapping": True, "Sources": [str(source_id)]}
         r = await self.http.post("/kafka/structure/sources", json=body)

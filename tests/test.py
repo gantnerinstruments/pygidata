@@ -74,7 +74,7 @@ async def online():
     src = client.list_buffer_sources()[0]
     logger.info("Selected src: {}".format(src))
 
-    variables = client.list_stream_variables(src.id)[:1]
+    variables = client.list_buffer_variables(src.id)[:1]
     selectors: List[VarSelector] = [
         VarSelector(SID=v.sid, VID=v.id)
         for v in variables
@@ -96,7 +96,7 @@ async def buffer():
     src = buffers[0]
     logger.info(f"Selected Buffer source: {src}")
 
-    variables = client.list_stream_variables(src.id)[:99]
+    variables = client.list_buffer_variables(src.id)[:99]
 
     selectors: List[VarSelector] = [
         VarSelector(SID=v.sid, VID=v.id)
@@ -126,7 +126,7 @@ async def export_data():
 
     logger.info(f"Selected Buffer source: {src}")
 
-    variables = client.list_stream_variables(src.id)[:99]
+    variables = client.list_buffer_variables(src.id)[:99]
 
     selectors: List[VarSelector] = [
         VarSelector(SID=v.sid, VID=v.id)
@@ -163,7 +163,7 @@ async def import_data():
 
     logger.info(f"Selected Buffer source: {src}")
 
-    variables = client.list_stream_variables(src.id)[:99]
+    variables = client.list_buffer_variables(src.id)[:99]
 
     selectors: List[VarSelector] = [
         VarSelector(SID=v.sid, VID=v.id)
@@ -273,7 +273,7 @@ async def cloud_test() -> None:
 
     # 2) ─── BUFFER WINDOW ------------------------------------------ #
     # src = client.list_buffer_sources()[0]
-    # vars_ = client.list_stream_variables(src.id)[:99]
+    # vars_ = client.list_buffer_variables(src.id)[:99]
     # selectors = [(v.sid, v.id) for v in vars_]
     #
     # logging.info("Fetching last 5 s buffer window from %s", src.name)

@@ -41,8 +41,12 @@ class BaseDriver(abc.ABC):
 
     # ----------------------------  BUFFER  --------------------------------
 
-    async def list_sources(self) -> List["Source"]:  # noqa: F821
+    async def list_buffer_sources(self) -> List["Source"]:  # noqa: F821
         """Return buffer-stream definitions."""
+        raise NotImplementedError
+
+    async def list_buffer_variables(self, source_id) -> List["GIStreamVariable"]: # noqa: F821
+        """Return buffer-stream variables."""
         raise NotImplementedError
 
     async def fetch_buffer(self, *args, **kwargs) -> "TimeSeriesFrame":  # noqa: F821

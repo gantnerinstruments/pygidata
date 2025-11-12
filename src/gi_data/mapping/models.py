@@ -201,7 +201,7 @@ class GIHistoryMeasurement(BaseModel):
                 "Call .attach_client(client) in DataClient.list_history_measurements."
             )
 
-        vars = self._client.list_stream_variables(self.source_id)
+        vars = self._client.list_buffer_variables(self.source_id)
         # cache for next access
         self.variables = vars
         return vars
