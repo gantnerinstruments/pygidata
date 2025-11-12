@@ -4,6 +4,7 @@ from typing import List, Union, Optional, TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PrivateAttr
+
 if TYPE_CHECKING:
     from gi_data import GIDataClient
 
@@ -235,6 +236,15 @@ class CSVImportSettings(BaseModel):
     DateTimeFmtColumn1: str = "%Y-%m-%d %H:%M:%S.%F"
     DateTimeFmtColumn2: str = ""
     DateTimeFmtColumn3: str = ""
+
+
+class CSVImportSettingsDefaultCloud(CSVImportSettings):
+    NameRowIndex: int = 0
+    UnitRowIndex: int = 3
+    ValuesStartRowIndex: int = 4
+    ValuesStartColumnIndex: int = 2
+
+    DateTimeFmtColumn1: str = "%Y-%m-%d %H:%M:%S.%F"
 
 
 class LogSettings(BaseModel):

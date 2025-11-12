@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable, Coroutine
+from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable
 from uuid import UUID
 
 import pandas as pd
@@ -13,7 +13,7 @@ import pandas as pd
 from gi_data.mapping.enums import Resolution, DataType
 from gi_data.mapping.models import (
     GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, LogSettings, CSVSettings,
-    CSVImportSettings, GIHistoryMeasurement, GIOnlineVariable
+    CSVImportSettings, GIHistoryMeasurement, GIOnlineVariable, CSVImportSettingsDefaultCloud
 )
 from .base import BaseDriver
 
@@ -395,6 +395,9 @@ class CloudGQLDriver(BaseDriver):
             auto_create_metadata: bool = True,
             session_timeout_sec: int = 300,
     ) -> str:
+        if csv_settings is None:
+            csv_settings = CSVImportSettingsDefaultCloud()
+
         param = {
             "Type": "csv",
             "SourceID": source_id,
