@@ -45,7 +45,7 @@ class BaseDriver(abc.ABC):
         """Return buffer-stream definitions."""
         raise NotImplementedError
 
-    async def list_buffer_variables(self, source_id) -> List["GIStreamVariable"]: # noqa: F821
+    async def list_buffer_variables(self, source_id) -> List["GIStreamVariable"]:  # noqa: F821
         """Return buffer-stream variables."""
         raise NotImplementedError
 

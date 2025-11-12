@@ -1,11 +1,11 @@
-# gimodules-python
+# pygimodules
 
 # Usage
 
 ### Install from PyPi
 
 ```bash 
-pip install src
+pip install pygimodules
 ```
 
 Import module in python script and call functions.
@@ -13,11 +13,33 @@ Import module in python script and call functions.
 A detailed description of the package and other APIs can be found in the Gantner Documentation.
 
 ```python
-from gi_data.cloudconnect.cloud_request import CloudRequest
+from gi_data.dataclient import GIDataClient
+import os
 
-cloud = CloudRequest()
-cloud.login(url='https://example.gi-cloud.io', access_token='TOKEN')  # Create a token under Tools -> Monitor
-cloud.get_all_stream_metadata()
+PROFILES = {
+    "qstation": {
+        "base": os.getenv("GI_QSTATION_BASE", "http://10.1.50.36:8090"),
+        "auth": {"username": os.getenv("GI_QSTATION_USER", "admin"),
+                 "password": os.getenv("GI_QSTATION_PASS", "admin")},
+    },
+    "cloud": {
+        "base": os.getenv("GI_CLOUD_BASE", "https://demo.gi-cloud.io"),
+        "auth": {"access_token": os.getenv("GI_CLOUD_TOKEN", "")},
+    },
+}
+
+ACTIVE_PROFILE = os.getenv("GI_PROFILE", "qstation")
+
+def get_client(profile: str = ACTIVE_PROFILE) -> GIDataClient:
+    cfg = PROFILES[profile]
+    if cfg["auth"].get("access_token"):
+        return GIDataClient(cfg["base"], access_token=cfg["auth"]["access_token"]) 
+    return GIDataClient(cfg["base"],
+                        username=cfg["auth"].get("username"),
+                        password=cfg["auth"].get("password"))
+
+client = get_client()
+
 ```
 
 

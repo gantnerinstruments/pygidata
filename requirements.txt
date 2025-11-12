@@ -78,7 +78,6 @@ fonttools>=4.60.1
     # via matplotlib
 fqdn>=1.5.1
     # via jsonschema
-gimodules>=0.3.0
     # via -r requirements.in
 greenlet>=3.2.4
     # via sqlalchemy
