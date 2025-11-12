@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pygidata"
-version = "1.0.0"
+version = "dev.0.4.0"
 description = "Python package providing an interface to the Gantner Instruments Data API"
 readme = "README.md"
 authors = [{ name = "Gantner Instruments GmbH" }]
@@ -30,8 +30,10 @@ where = ["src"]
 include = ["gi_data*"]
 
 [tool.setuptools.dynamic]
-# Default dependency file
 dependencies = { file = ["requirements.txt"] }
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-xdist"]
 
 [tool.tox]
 env_list = ["py310", "py311", "py312"]
