@@ -10,7 +10,7 @@ pip install pygidata
 
 Import module in python script and call functions.
 
-A detailed description of the package and other APIs can be found under [docs/](docs/Usage_pygidata.ipynb) or in the
+A detailed description of the package and other APIs can be found under [docs/](docs/Usage.ipynb) or in the
 Gantner Documentation.
 
 ```python
