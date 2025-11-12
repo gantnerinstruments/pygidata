@@ -1,8 +1,8 @@
 Installation
 ============
 
-**gimodules** is an open-source Python package available on PyPI.
-It requires **Python 3.8 or newer**.
+**pygidata** is an open-source Python package available on PyPI.
+It requires **Python 3.10 or newer**.
 
 We recommend using a virtual environment to avoid dependency conflicts:
 
@@ -12,19 +12,19 @@ We recommend using a virtual environment to avoid dependency conflicts:
     source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
     # Install the module
-    pip install gimodules
+    pip install pygidata
 
-You can also install a specific verison like
+You can also install a specific version like
 
 .. code-block:: bash
 
-    pip install gimodules==0.2.0
+    pip install pygidata==0.4.0
 
 The latest release and installation requirements are available on PyPI:
-📦 https://pypi.org/project/gimodules
+📦 https://pypi.org/project/pygidata
 
 If you want to contribute or setup a local development environment,
-gimodules is open source and available on `GitHub <https://github.com/gantnerinstruments/gimodules-python>`_.
+pygidata is open source and available on `GitHub <https://github.com/gantnerinstruments/pygidata-python>`_.
 
 Make sure to read the README for installation and development instructions.
 

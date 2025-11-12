@@ -1,27 +1,53 @@
-# gimodules-python
+# pygidata
 
 # Usage
 
 ### Install from PyPi
 
 ```bash 
-pip install gimodules
+pip install pygidata
 ```
 
 Import module in python script and call functions.
 
-A detailed description of the package and other APIs can be found in the Gantner Documentation.
+A detailed description of the package and other APIs can be found under [docs/](docs/Usage_pygidata.ipynb) or in the
+Gantner Documentation.
 
 ```python
-from gimodules.cloudconnect.cloud_request import CloudRequest
+from gi_data.dataclient import GIDataClient
+import os
 
-cloud = CloudRequest()
-cloud.login(url='https://example.gi-cloud.io', access_token='TOKEN') # Create a token under Tools -> Monitor
-cloud.get_all_stream_metadata()
+PROFILES = {
+    "qstation": {
+        "base": os.getenv("GI_QSTATION_BASE", "http://10.1.50.36:8090"),
+        "auth": {"username": os.getenv("GI_QSTATION_USER", "admin"),
+                 "password": os.getenv("GI_QSTATION_PASS", "admin")},
+    },
+    "cloud": {
+        "base": os.getenv("GI_CLOUD_BASE", "https://demo.gi-cloud.io"),
+        "auth": {"access_token": os.getenv("GI_CLOUD_TOKEN", "")},
+    },
+}
+
+ACTIVE_PROFILE = os.getenv("GI_PROFILE", "qstation")
+
+def get_client(profile: str = ACTIVE_PROFILE) -> GIDataClient:
+    cfg = PROFILES[profile]
+    if cfg["auth"].get("access_token"):
+        return GIDataClient(cfg["base"], access_token=cfg["auth"]["access_token"]) 
+    return GIDataClient(cfg["base"],
+                        username=cfg["auth"].get("username"),
+                        password=cfg["auth"].get("password"))
+
+client = get_client()
+
 ```
 
 
 # Development
+
+### Used as submodule in
+* gi-sphinx
 
 ### Information on how to manually distribute this package can be found here
 
@@ -52,25 +78,54 @@ or
 pytest
 ```
 
-## Requirements
+### Generate loose requirements
 
-When starting to develop you can install the requirements with:
+**Do this in a bash shell using the lowest version you want to support!**
 
-```bash
-pip install -r requirements.txt
+Install uv to easily install all needed python versions (coss-platform)
+
+``` bash
+pip install uv
 ```
 
-When you add new components and the requirements change, 
-you can find out what packages are needed by the project and create new requirements:
-
 ```bash
-pipreqs .
+python -m pip install -U pip tox
 ```
 
-To create project all current packages installed in your venv for requirements automatically:
+```bash
+python -m pip install pip-tools
+```
+```bash
+python -m pip install pipreqs
+```
+
+
+To ensure we support multiple python versions we don't want to pin every dependency.
+Instead, we pin everything on the lowest version (that we support) and make
+it loose for every version above.
+
+from root package dir (/gimodules-python)
 
 ```bash
-pip3 freeze > requirements.txt
+./gen-requirements.sh
+```
+
+#### Ensure python-package version compatibility
+
+```bash
+uv python install 3.10 3.11 3.12 3.13 3.14
+```
+
+Now run for all envs
+
+```bash
+tox
+```
+
+of for a specific version only -> look what you defined in pyproject.toml
+
+```bash
+tox -e py310
 ```
 ---
 
@@ -86,7 +141,7 @@ The documentation consists of partially generated content.
 To **generate .rst files** from the code package, run the following command from the root directory of the project:
 
 ```bash
-sphinx-apidoc -o docs/source/ gimodules
+sphinx-apidoc -o docs/source/ src
 ```
 You need pandoc installed on the system itself first to build:
 

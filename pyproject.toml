@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygidata"
+version = "0.4.0.dev0"
+description = "Python package providing an interface to the Gantner Instruments Data API"
+readme = "README.md"
+authors = [{ name = "Gantner Instruments GmbH" }]
+requires-python = ">=3.10,<3.13"
+keywords = ["python"]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: Unix",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows"
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["gi_data*"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-xdist"]
+
+[tool.tox]
+env_list = ["py310", "py311", "py312"]
+
+[tool.tox.env_run_base]
+deps = [
+  "pytest>=7",
+  "pytest-xdist",
+]
+commands = [
+  ["pytest", "-q"]
+]
+package = "wheel"

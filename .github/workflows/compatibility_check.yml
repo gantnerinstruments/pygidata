@@ -1,13 +1,9 @@
 name: Python Package Compatibility
 
 on:
-  push:
+  workflow_dispatch:
     branches:
       - '**'
-  pull_request:
-    branches:
-      - '**'
-
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -46,5 +42,5 @@ jobs:
       - name: Upload built package artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: gimodules-${{ matrix.python-version }}
+          name: src-${{ matrix.python-version }}
           path: dist/*

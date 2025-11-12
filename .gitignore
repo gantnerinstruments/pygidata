@@ -132,10 +132,10 @@ modules_tester.ipynb
 
 test_venv
 .idea/
-/gimodules/resources/csv/test/*
+/gi_data/resources/csv/test/*
 
 gi_cloud_tutorial.ipynb
-/gimodules/cloudconnect/GIController.py
+/gi_data/cloudconnect/GIController.py
 
 
 .vscode/
