@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable
+from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable, Coroutine
 from uuid import UUID
 
 import pandas as pd
@@ -13,7 +13,7 @@ import pandas as pd
 from gi_data.mapping.enums import Resolution, DataType
 from gi_data.mapping.models import (
     GIStream, GIStreamVariable, TimeSeries, VarSelector, BufferRequest, LogSettings, CSVSettings,
-    CSVImportSettings, GIHistoryMeasurement
+    CSVImportSettings, GIHistoryMeasurement, GIOnlineVariable
 )
 from .base import BaseDriver
 
@@ -181,10 +181,10 @@ class CloudGQLDriver(BaseDriver):
             for r in rows
         ]
 
-    async def list_variables(self) -> List[Dict[str, Any]]:
+    async def list_variables(self) -> list[GIOnlineVariable]:
         await self._bearer()
-        r = await self.http.get("/online/structure/variables")
-        return r.json().get("Data", [])
+        res = await self.http.get("/online/structure/variables")
+        return [GIOnlineVariable.model_validate(d) for d in res.json()["Data"]]
 
     # --- online --------------------------------------------------------
 
