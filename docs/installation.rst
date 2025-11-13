@@ -24,7 +24,7 @@ The latest release and installation requirements are available on PyPI:
 📦 https://pypi.org/project/pygidata
 
 If you want to contribute or setup a local development environment,
-pygidata is open source and available on `GitHub <https://github.com/gantnerinstruments/pygidata-python>`_.
+pygidata is open source and available on `GitHub <https://github.com/gantnerinstruments/pygidata>`_.
 
 Make sure to read the README for installation and development instructions.
 
