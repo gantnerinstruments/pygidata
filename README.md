@@ -48,6 +48,8 @@ client = get_client()
 
 ### Used as submodule in
 * gi-sphinx
+* gi-jupyterlab
+* gi-analytics-examples
 
 ### Information on how to manually distribute this package can be found here
 
