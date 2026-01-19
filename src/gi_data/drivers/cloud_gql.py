@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import math
 from collections import defaultdict
 from datetime import datetime, timezone

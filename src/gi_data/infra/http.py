@@ -184,7 +184,6 @@ class AsyncHTTP:
             request=res.request
         )
 
-
     async def aclose(self) -> None:
         await self._client.aclose()
 

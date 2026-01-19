@@ -293,12 +293,10 @@ class GIDataClient:
 
     # convenience
     def export_csv(self, selectors, *, start_ms, end_ms, **kw) -> bytes:
-        return self.export_data(selectors, start_ms=start_ms, end_ms=end_ms,
-                           format=DataFormat.CSV, **kw)
+        return self.export_data(selectors, start_ms=start_ms, end_ms=end_ms, format=DataFormat.CSV, **kw)
 
     def export_udbf(self, selectors, *, start_ms, end_ms, **kw) -> bytes:
-        return self.export_data(selectors, start_ms=start_ms, end_ms=end_ms,
-                           format=DataFormat.UDBF, **kw)
+        return self.export_data(selectors, start_ms=start_ms, end_ms=end_ms, format=DataFormat.UDBF, **kw)
 
     # --------------------------- import ------------------------------- #
     def import_data(
