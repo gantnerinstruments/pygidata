@@ -1,3 +1,11 @@
+## [0.4.1]
+
+### Added
+
+- Added new export resolution "RAW" for GI.cloud exports
+- Enabled UDBF export
+- Added 15 second download progress indication
+
 ## [0.4.0]
 
 

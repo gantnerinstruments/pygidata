@@ -63,7 +63,8 @@ https://packaging.python.org/en/latest/tutorials/packaging-projects/
 ```
 
 ## Distribute with CI / CD
-Edit setup.py version number and create a release.
+
+Edit pyproject.toml version number and create a release.
 -> Creating a release will trigger the workflow to push the package to PyPi
 
 ## Tests

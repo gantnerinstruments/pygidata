@@ -222,6 +222,15 @@ class CSVSettings(BaseModel):
 
     model_config = dict(validate_by_name=True, frozen=True)
 
+    def CSVSettingsDefaultCloud() -> CSVSettings:
+        return CSVSettings(
+            AddColumnHeader=True,
+            DateTimeHeader="datetime",
+            DateTimeFormat="%d.%m.%Y %H:%M:%S.%%0us",
+            ColumnSeparator=";",
+            DecimalSeparator=".",
+        )
+
 
 class CSVImportSettings(BaseModel):
     ColumnSeparator: str = ";"
