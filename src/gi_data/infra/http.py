@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Mapping, MutableMapping, Optional
 
 import httpx
@@ -72,8 +73,6 @@ class AsyncHTTP:
             content: bytes | None = None,
             headers: Optional[MutableMapping[str, str]] = None,
     ) -> httpx.Response:
-
-        # base headers
         final_headers: MutableMapping[str, str] = {}
         token = await self._auth.bearer()
         final_headers["authorization"] = f"Bearer {token}"
@@ -83,7 +82,6 @@ class AsyncHTTP:
         else:
             final_headers["content-type"] = "application/json"
 
-        # allow caller overrides
         if headers:
             final_headers.update(headers)
 
@@ -96,28 +94,95 @@ class AsyncHTTP:
             "(bytes)" if content is not None else (json if json else "None"),
         )
 
-        res = await self._client.request(
-            method,
-            url,
-            headers=final_headers,
-            params=params,
-            json=json,
-            content=content,
+        CHUNK = 65536
+        LOG_EVERY_SEC = 15.0
+
+        async with self._client.stream(
+                method,
+                url,
+                headers=final_headers,
+                params=params,
+                json=json,
+                content=content,
+        ) as resp:
+            resp.raise_for_status()
+
+            total = int(resp.headers.get("content-length") or 0)
+
+            downloaded = 0
+            last_log = time.monotonic()
+
+            buf = bytearray()
+
+            async for chunk in resp.aiter_bytes(CHUNK):
+                downloaded += len(chunk)
+                buf.extend(chunk)
+
+                now = time.monotonic()
+                if now - last_log >= LOG_EVERY_SEC:
+                    if total:
+                        pct = downloaded * 100.0 / total
+                        logger.info(
+                            "Download progress: %.1f%% (%d/%d)",
+                            pct,
+                            downloaded,
+                            total,
+                        )
+                    else:
+                        logger.info("Download progress: %d bytes", downloaded)
+                    last_log = now
+
+            if total:
+                pct = downloaded * 100.0 / total
+                logger.info("Download completed: %.1f%% (%d/%d)", pct, downloaded, total)
+            else:
+                logger.info("Download completed: %d bytes", downloaded)
+
+            # Return an in-memory response (large files => large RAM usage)
+            return httpx.Response(
+                status_code=resp.status_code,
+                headers=resp.headers,
+                content=bytes(buf),
+                request=resp.request,
+            )
+
+    async def _read_with_progress(self, method, url, headers, params, content, json):
+        CHUNK = 65536  # 64 KB
+        downloaded = 0
+
+        async with self._client.stream(
+                method,
+                url,
+                headers=headers,
+                params=params,
+                json=json,
+                content=content
+        ) as res:
+
+            res.raise_for_status()
+
+            total = int(res.headers.get("content-length") or 0)
+            logger.info("Response started (total=%s)", total or "unknown")
+
+            data = bytearray()
+            async for chunk in res.aiter_bytes(CHUNK):
+                downloaded += len(chunk)
+                data.extend(chunk)
+
+                if total:
+                    pct = (downloaded / total) * 100
+                    logger.info("Download progress: %.1f%% (%d/%d)", pct, downloaded, total)
+                else:
+                    logger.info("Download progress: %d bytes", downloaded)
+
+            logger.info("Download completed (%d bytes)", downloaded)
+
+        return httpx.Response(
+            status_code=res.status_code,
+            headers=res.headers,
+            content=bytes(data),
+            request=res.request
         )
-
-        logger.info(
-            "Response: %s | Content-Length: %d",
-            res.status_code,
-            len(res.content),
-        )
-        logger.debug("Response Content: %s", res.content)
-
-        if res.status_code == 404:
-            logger.warning("WARNING!: Response Body (Error, first 500 chars): %s", res.text[:500])
-            return res
-
-        res.raise_for_status()
-        return res
 
     async def aclose(self) -> None:
         await self._client.aclose()

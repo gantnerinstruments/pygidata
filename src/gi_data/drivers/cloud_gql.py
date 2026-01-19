@@ -300,7 +300,8 @@ class CloudGQLDriver(BaseDriver):
 
     async def export(  # csv via GQL exportCSV, udbf via /history/data
             self, selectors: List[VarSelector], *,
-            start_ms: float, end_ms: float,
+            start_ms: float,
+            end_ms: float,
             format: Literal["csv", "udbf"],
             points: Optional[int] = 2048,
             timezone: str = "UTC",
@@ -315,42 +316,133 @@ class CloudGQLDriver(BaseDriver):
             target: Optional[str] = None,  # ignored on cloud
     ) -> bytes:
         frm, to = _window(start_ms, end_ms)
+
+        ENABLE_RAW_QGL_CSV_EXPORT = False  # TODO: renable when raw GraphQL CSV export is fixed
+
         if format == "csv":
+            is_raw = resolution == Resolution.RAW
+
+            # group by stream
             by_sid: Dict[str, List[UUID]] = {}
             for s in selectors:
                 by_sid.setdefault(str(s.SID), []).append(UUID(str(s.VID)))
-            chunks = []
+
+            chunks: List[str] = []
+
             for sid, vids in by_sid.items():
                 fields = await self._vid_to_fieldnames(sid, vids)
                 meta = await self._var_meta(sid)
                 sname = await self._stream_name(sid)
+
                 for vid, f in zip(vids, fields):
                     m = meta.get(str(vid), {"name": str(vid), "unit": ""})
-                    hdr = '", "'.join([m["name"], sname, aggregation or "avg", m["unit"]])
-                    chunks.append('{ field: "%s:%s.%s", headers: ["%s"] }' % (sid, f, aggregation or "avg", hdr))
-            cols = ",\n          ".join([
-                '{ field: "ts", headers: ["datetime"], dateFormat: "%s" }' % (date_format or "%Y-%m-%dT%H:%M:%S"),
+
+                    if is_raw:
+
+                        # We use the Gantner REST call for RAW here
+                        if not ENABLE_RAW_QGL_CSV_EXPORT:
+                            req = BufferRequest(
+                                Start=frm,
+                                End=to,
+                                Variables=selectors,
+                                Points=points or 2048,
+                                Type="equidistant",
+                                Format="csv",
+                                Precision=precision,
+                                TimeZone=timezone,
+                                TimeOffset=0,
+                            ).model_dump(by_alias=True, mode="json")
+
+                            if csv_settings is None:
+                                csv_settings = CSVSettings.CSVSettingsDefaultCloud()
+                            req["CSVSettings"] = csv_settings.model_dump(exclude_none=True, by_alias=True)
+
+                            if log_settings:
+                                req["LogSettings"] = log_settings.model_dump(exclude_none=True)
+                            await self._bearer()
+                            headers = {"Accept-Encoding": "identity"}
+                            r = await self.http.post("/buffer/data", json=req, headers=headers)
+                            return r.content
+
+                        # field: "<SID>:<field>"
+                        hdr = '", "'.join([m["name"], sname, m["unit"]])
+                        chunks.append(
+                            '{ field: "%s:%s", headers: ["%s"] }'
+                            % (sid, f, hdr)
+                        )
+                    else:
+                        # field: "<SID>:<field>.<agg>"
+                        agg = aggregation or "avg"
+                        hdr = '", "'.join([m["name"], sname, agg, m["unit"]])
+                        chunks.append(
+                            '{ field: "%s:%s.%s", headers: ["%s"] }'
+                            % (sid, f, agg, hdr)
+                        )
+
+            # time columns; keep same headers for both paths
+            ts_cols = [
+                '{ field: "ts", headers: ["datetime"], dateFormat: "%s" }'
+                % (date_format or "%Y-%m-%dT%H:%M:%S"),
                 '{ field: "ts", headers: ["time", "", "", "[s since 01.01.1970]"] }',
-                *chunks,
-            ])
-            fname = filename or f"export_{frm}_{to}.csv"
-            q = f"""{{ exportCSV(from:{frm}, to:{to}, resolution: {resolution}, timezone:"{timezone}",
-                        filename:"{fname}", columns:[ {cols} ]) {{ file }} }}"""
+            ]
+
+            cols = ",\n          ".join([*ts_cols, *chunks])
+
+            if is_raw:
+                # default filename for raw
+                if filename:
+                    fname = filename
+                else:
+                    fname = f"export_{frm}_{to}_raw.csv"
+
+                q = (
+                    "{ rawExport("
+                    f"from:{frm}, to:{to}, "
+                    f'timezone:"{timezone}", '
+                    f'filename:"{fname}", '
+                    f"columns:[ {cols} ]"
+                    ") { file } }"
+                )
+            else:
+                # aggregated CSV export
+                if filename:
+                    fname = filename
+                else:
+                    fname = f"export_{frm}_{to}.csv"
+
+                q = (
+                    "{ exportCSV("
+                    f"from:{frm}, to:{to}, "
+                    f"resolution: {resolution}, "
+                    f'timezone:"{timezone}", '
+                    f'filename:"{fname}", '
+                    f"columns:[ {cols} ]"
+                    ") { file } }"
+                )
+
             await self._bearer()
             res = await self.http.post("/__api__/gql", json={"query": q})
             return res.content
-        # udbf
-        raise NotImplementedError
-        req = BufferRequest(
-            Start=frm, End=to, Variables=selectors, Points=points or 2048,
-            Type="equidistant", Format="udbf", Precision=precision,
-            TimeZone=timezone, TimeOffset=0
-        ).model_dump(by_alias=True, mode="json")
-        if log_settings:
-            req["LogSettings"] = log_settings.model_dump(exclude_none=True)
-        await self._bearer()
-        r = await self.http.post("/history/data", json=req)
-        return r.content
+
+        if format == "udbf":
+            req = BufferRequest(
+                Start=frm,
+                End=to,
+                Variables=selectors,
+                Points=points or 2048,
+                Type="equidistant",
+                Format="udbf",
+                Precision=precision,
+                TimeZone=timezone,
+                TimeOffset=0,
+            ).model_dump(by_alias=True, mode="json")
+
+            if log_settings:
+                req["LogSettings"] = log_settings.model_dump(exclude_none=True)
+            await self._bearer()
+            headers = {"Accept-Encoding": "identity"}
+            r = await self.http.post("/buffer/data", json=req, headers=headers)
+            return r.content
 
     async def export_udbf(
             self,

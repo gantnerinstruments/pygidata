@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pygidata"
-version = "0.4.0.dev1"
+version = "0.4.1"
 description = "Python package providing an interface to the Gantner Instruments Data API"
 readme = "README.md"
 authors = [{ name = "Gantner Instruments GmbH" }]

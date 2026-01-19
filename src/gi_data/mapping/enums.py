@@ -14,6 +14,7 @@ class Resolution(Enum):
     KHZ = "KHZ"
     KHZ10 = "KHZ10"
     NANOS = "nanos"
+    RAW = "RAW"
 
 
 class DataFormat(Enum):
