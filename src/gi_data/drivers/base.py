@@ -105,7 +105,7 @@ class BaseDriver(abc.ABC):
 
     def import_udbf(self, source_id, source_name, file_bytes,
                     target, add_time_series, sample_rate,
-                    auto_create_metadata, session_timeout_sec):
+                    auto_create_metadata, session_timeout_sec, **kwargs):
         pass
 
     def export(self, selectors, start_ms, end_ms, format, points,

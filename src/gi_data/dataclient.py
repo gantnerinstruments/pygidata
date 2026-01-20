@@ -314,6 +314,7 @@ class GIDataClient:
             sample_rate: int = -1,
             auto_create_metadata: bool = True,
             session_timeout_sec: int = 300,
+            **kw
     ) -> str:
         drv = self._drivers["history"]
 
@@ -345,16 +346,17 @@ class GIDataClient:
                     sample_rate=sample_rate,
                     auto_create_metadata=auto_create_metadata,
                     session_timeout_sec=session_timeout_sec,
+                    **kw
                 )
             )
 
         raise NotImplementedError(f"Import for format={format} not supported.")
 
     def import_csv(self, source_id, source_name, file_bytes, **kw) -> str:
-        return self.import_(source_id, source_name, file_bytes, format=DataFormat.CSV, **kw)
+        return self.import_data(source_id, source_name, file_bytes, format=DataFormat.CSV, **kw)
 
     def import_udbf(self, source_id, source_name, file_bytes, **kw) -> str:
-        return self.import_(source_id, source_name, file_bytes, format=DataFormat.UDBF, **kw)
+        return self.import_data(source_id, source_name, file_bytes, format=DataFormat.UDBF, **kw)
 
     # ------------------------ housekeeping --------------------------- #
     def close(self) -> None:

@@ -1,8 +1,6 @@
-# src/src/drivers/cloud_gql.py  (no CloudRequest dependency)
-
 from __future__ import annotations
-
 import math
+import logging
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable
@@ -16,6 +14,9 @@ from gi_data.mapping.models import (
     CSVImportSettings, GIHistoryMeasurement, GIOnlineVariable, CSVImportSettingsDefaultCloud
 )
 from .base import BaseDriver
+from ..utils.logging import setup_module_logger
+
+logger = setup_module_logger(__name__, level=logging.INFO)
 
 
 def _now_ms() -> int:
@@ -523,6 +524,7 @@ class CloudGQLDriver(BaseDriver):
             sample_rate: int = -1,
             auto_create_metadata: bool = True,
             session_timeout_sec: int = 300,
+            **kwargs
     ) -> str:
         param = {
             "Type": "udbf",

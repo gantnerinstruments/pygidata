@@ -255,24 +255,40 @@ class HTTPTimeSeriesDriver(BaseDriver):
             sample_rate: int = -1,
             auto_create_metadata: bool = True,
             session_timeout_sec: int = 300,
+            session_id: str | None = None,
+            close_session: bool = True,
     ) -> str:
-        param = {
-            "Type": "udbf",
-            "Target": target,
-            "SourceID": source_id,
-            "SourceName": source_name,
-            "MeasID": "",
-            "SessionTimeoutSec": int(session_timeout_sec),
-            "AddTimeSeries": str(add_time_series).lower(),
-            "SampleRate": str(sample_rate),
-            "AutoCreateMetaData": str(auto_create_metadata).lower(),
-        }
-        res = await self.http.post("/history/data/import", json=param)
-        sid = res.json()["Data"]["SessionID"]
-        await self.http.post(f"/history/data/import/{sid}", content=file_bytes,
-                             headers={"Content-Type": "application/octet-stream"})
-        await self.http.delete(f"/history/data/import/{sid}")
-        return str(sid)
+        created_here = session_id is None
+
+        if created_here:
+            param = {
+                "Type": "udbf",
+                "Target": target,
+                "SourceID": source_id,
+                "SourceName": source_name,
+                "MeasID": "",
+                "SessionTimeoutSec": int(session_timeout_sec),
+                "AddTimeSeries": str(add_time_series).lower(),
+                "SampleRate": str(sample_rate),
+                "AutoCreateMetaData": str(auto_create_metadata).lower(),
+            }
+            res = await self.http.post("/history/data/import", json=param)
+            session_id = str(res.json()["Data"]["SessionID"])
+
+        await self.http.post(
+            f"/history/data/import/{session_id}",
+            content=file_bytes,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+
+        # Close on default or requested
+        if close_session:
+            await self.http.delete(f"/history/data/import/{session_id}")
+
+        return session_id
+
+    async def close_udbf_session(self, session_id: str) -> None:
+        await self.http.delete(f"/history/data/import/{session_id}")
 
 
 def _to_frame(ts: TimeSeries, order: List[UUID]) -> pd.DataFrame:
