@@ -97,6 +97,10 @@ class AsyncHTTP:
         CHUNK = 65536
         LOG_EVERY_SEC = 15.0
 
+        start = time.monotonic()
+        progress_enabled = False
+        last_log = start  # updated once progress is enabled
+
         async with self._client.stream(
                 method,
                 url,
@@ -108,10 +112,7 @@ class AsyncHTTP:
             resp.raise_for_status()
 
             total = int(resp.headers.get("content-length") or 0)
-
             downloaded = 0
-            last_log = time.monotonic()
-
             buf = bytearray()
 
             async for chunk in resp.aiter_bytes(CHUNK):
@@ -119,26 +120,27 @@ class AsyncHTTP:
                 buf.extend(chunk)
 
                 now = time.monotonic()
-                if now - last_log >= LOG_EVERY_SEC:
+
+                # Enable progress logging only for downloads (>= 15s)
+                if not progress_enabled and (now - start) >= LOG_EVERY_SEC:
+                    progress_enabled = True
+                    last_log = now
+
+                if progress_enabled and (now - last_log) >= LOG_EVERY_SEC:
                     if total:
                         pct = downloaded * 100.0 / total
-                        logger.info(
-                            "Download progress: %.1f%% (%d/%d)",
-                            pct,
-                            downloaded,
-                            total,
-                        )
+                        logger.info("Download progress: %.1f%% (%d/%d)", pct, downloaded, total)
                     else:
                         logger.info("Download progress: %d bytes", downloaded)
                     last_log = now
 
-            if total:
-                pct = downloaded * 100.0 / total
-                logger.info("Download completed: %.1f%% (%d/%d)", pct, downloaded, total)
-            else:
-                logger.info("Download completed: %d bytes", downloaded)
+            if progress_enabled:
+                if total:
+                    pct = downloaded * 100.0 / total
+                    logger.info("Download completed: %.1f%% (%d/%d)", pct, downloaded, total)
+                else:
+                    logger.info("Download completed: %d bytes", downloaded)
 
-            # Return an in-memory response (large files => large RAM usage)
             return httpx.Response(
                 status_code=resp.status_code,
                 headers=resp.headers,
