@@ -9,6 +9,7 @@ from uuid import UUID
 
 import nest_asyncio
 import pandas as pd
+import atexit
 
 from gi_data.drivers.base import BaseDriver
 from gi_data.drivers.cloud_gql import CloudGQLDriver
@@ -29,7 +30,22 @@ PACKAGE_PREFIX = "gi_data"
 # ------------------------------------------------------------------ #
 # helpers                                                            #
 # ------------------------------------------------------------------ #
-asyncio.set_event_loop(asyncio.new_event_loop())
+
+
+_SYNC_LOOP: asyncio.AbstractEventLoop | None = None
+
+
+def _get_or_create_sync_loop() -> asyncio.AbstractEventLoop:
+    global _SYNC_LOOP
+
+    if _SYNC_LOOP is None or _SYNC_LOOP.is_closed():
+        if hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+        _SYNC_LOOP = asyncio.new_event_loop()
+        asyncio.set_event_loop(_SYNC_LOOP)
+
+    return _SYNC_LOOP
 
 
 def _to_task(fut, as_task, loop):
@@ -38,16 +54,34 @@ def _to_task(fut, as_task, loop):
     return loop.create_task(fut)
 
 
-def _run(fut, as_task=True):
+def _run(fut, as_task: bool = True):
+    """
+    Run an awaitable from synchronous code.
+
+    - If we're already inside a running loop (e.g. Jupyter), use nest_asyncio and run on it.
+    - Otherwise, reuse a single dedicated sync loop for the whole process.
+    """
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = _get_or_create_sync_loop()
         return loop.run_until_complete(_to_task(fut, as_task, loop))
     else:
         nest_asyncio.apply(loop)
         return loop.run_until_complete(_to_task(fut, as_task, loop))
+
+
+def _close_sync_loop() -> None:
+    global _SYNC_LOOP
+    if _SYNC_LOOP is not None and not _SYNC_LOOP.is_closed():
+        try:
+            _SYNC_LOOP.stop()
+        finally:
+            _SYNC_LOOP.close()
+    _SYNC_LOOP = None
+
+
+atexit.register(_close_sync_loop)
 
 
 class GIDataClient:
