@@ -115,7 +115,7 @@ class AsyncHTTP:
             downloaded = 0
             buf = bytearray()
 
-            async for chunk in resp.aiter_bytes(CHUNK):
+            async for chunk in resp.aiter_raw(CHUNK):
                 downloaded += len(chunk)
                 buf.extend(chunk)
 
@@ -167,7 +167,7 @@ class AsyncHTTP:
             logger.info("Response started (total=%s)", total or "unknown")
 
             data = bytearray()
-            async for chunk in res.aiter_bytes(CHUNK):
+            async for chunk in res.aiter_raw(CHUNK):
                 downloaded += len(chunk)
                 data.extend(chunk)
 
