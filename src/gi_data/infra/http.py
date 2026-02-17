@@ -109,8 +109,6 @@ class AsyncHTTP:
                 json=json,
                 content=content,
         ) as resp:
-            resp.raise_for_status()
-
             total = int(resp.headers.get("content-length") or 0)
             downloaded = 0
             buf = bytearray()
@@ -140,13 +138,26 @@ class AsyncHTTP:
                     logger.info("Download completed: %.1f%% (%d/%d)", pct, downloaded, total)
                 else:
                     logger.info("Download completed: %d bytes", downloaded)
-
-            return httpx.Response(
+            out = httpx.Response(
                 status_code=resp.status_code,
                 headers=resp.headers,
                 content=bytes(buf),
                 request=resp.request,
             )
+            try:
+                out.raise_for_status()
+            except httpx.HTTPStatusError:
+                body = out.text
+                logger.error(
+                    "HTTP error response for %s %s%s [%s]: %s",
+                    method,
+                    self._base,
+                    url,
+                    out.status_code,
+                    body,
+                )
+                raise
+            return out
 
     async def _read_with_progress(self, method, url, headers, params, content, json):
         CHUNK = 65536  # 64 KB
