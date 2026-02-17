@@ -239,9 +239,17 @@ class HTTPTimeSeriesDriver(BaseDriver):
         }
         res = await self.http.post("/history/data/import", json=param)
         sid = res.json()["Data"]["SessionID"]
-        await self.http.post(f"/history/data/import/{sid}", content=file_bytes,
-                             headers={"Content-Type": "text/csv"})
-        await self.http.delete(f"/history/data/import/{sid}")
+        try:
+            await self.http.post(
+                f"/history/data/import/{sid}",
+                content=file_bytes,
+                headers={"Content-Type": "text/csv"},
+            )
+        finally:
+            try:
+                await self.http.delete(f"/history/data/import/{sid}")
+            except Exception:
+                logger.exception("Failed to close import session %s", sid)
         return str(sid)
 
     async def import_udbf(
@@ -275,15 +283,19 @@ class HTTPTimeSeriesDriver(BaseDriver):
             res = await self.http.post("/history/data/import", json=param)
             session_id = str(res.json()["Data"]["SessionID"])
 
-        await self.http.post(
-            f"/history/data/import/{session_id}",
-            content=file_bytes,
-            headers={"Content-Type": "application/octet-stream"},
-        )
-
-        # Close on default or requested
-        if close_session:
-            await self.http.delete(f"/history/data/import/{session_id}")
+        try:
+            await self.http.post(
+                f"/history/data/import/{session_id}",
+                content=file_bytes,
+                headers={"Content-Type": "application/octet-stream"},
+            )
+        finally:
+            # Close on default or requested
+            if close_session:
+                try:
+                    await self.http.delete(f"/history/data/import/{session_id}")
+                except Exception:
+                    logger.exception("Failed to close import session %s", session_id)
 
         return session_id
 
