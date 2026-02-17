@@ -509,8 +509,13 @@ class CloudGQLDriver(BaseDriver):
         sid = res.json()["Data"]["SessionID"]
 
         hdrs = {"Content-Type": "text/csv"}
-        await self.http.post(f"/history/data/import/{sid}", content=file_bytes, headers=hdrs)
-        await self.http.delete(f"/history/data/import/{sid}")
+        try:
+            await self.http.post(f"/history/data/import/{sid}", content=file_bytes, headers=hdrs)
+        finally:
+            try:
+                await self.http.delete(f"/history/data/import/{sid}")
+            except Exception:
+                logger.exception("Failed to close import session %s", sid)
         return str(sid)
 
     async def import_udbf(
@@ -542,6 +547,11 @@ class CloudGQLDriver(BaseDriver):
         sid = res.json()["Data"]["SessionID"]
 
         hdrs = {"Content-Type": "application/octet-stream"}
-        await self.http.post(f"/history/data/import/{sid}", content=file_bytes, headers=hdrs)
-        await self.http.delete(f"/history/data/import/{sid}")
+        try:
+            await self.http.post(f"/history/data/import/{sid}", content=file_bytes, headers=hdrs)
+        finally:
+            try:
+                await self.http.delete(f"/history/data/import/{sid}")
+            except Exception:
+                logger.exception("Failed to close import session %s", sid)
         return str(sid)
