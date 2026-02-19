@@ -411,10 +411,13 @@ class CloudGQLDriver(BaseDriver):
                 else:
                     fname = f"export_{frm}_{to}.csv"
 
+                res_token = resolution.value if resolution is not None else None
+                res_part = f"resolution: {res_token}, " if res_token else ""
+
                 q = (
                     "{ exportCSV("
                     f"from:{frm}, to:{to}, "
-                    f"resolution: {resolution}, "
+                    f"{res_part}"
                     f'timezone:"{timezone}", '
                     f'filename:"{fname}", '
                     f"columns:[ {cols} ]"
