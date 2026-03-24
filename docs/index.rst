@@ -26,4 +26,3 @@ The package section describes the modules and submodules of the pygidata package
    overview
    installation
    Usage
-   source/pygidata
