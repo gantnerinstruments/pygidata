@@ -4,6 +4,8 @@ Installation
 **pygidata** is an open-source Python package available on PyPI.
 It requires **Python 3.10 or newer**.
 
+The package includes ``ginsutility`` as an expert/local module for local Highspeedport usage.
+
 We recommend using a virtual environment to avoid dependency conflicts:
 
 .. code-block:: bash
@@ -13,6 +15,25 @@ We recommend using a virtual environment to avoid dependency conflicts:
 
     # Install the module
     pip install pygidata
+
+Local expert installation (``ginsutility`` module)
+--------------------------------------------------
+
+Use this only for local/LAN Highspeedport workflows that require ``giutility.dll``.
+
+.. code-block:: bash
+
+    pip install "pygidata[expert-local]"
+
+For editable development in this repository:
+
+.. code-block:: bash
+
+    pip install -e .[expert-local]
+
+.. warning::
+
+    ``ginsutility`` is for local expert access and is not meant as a GI.cloud-only integration path.
 
 You can also install a specific version like
 

@@ -1,0 +1,208 @@
+/* General settings */
+body {
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    margin: 0;
+}
+
+/* Color variables */
+:root {
+    --main-color: #3056a8;
+    --hover-color: #4c85ff;
+    --light-color: #c9daff;
+    --light-grey: #e0e0e0;
+    --grey: #757575;
+    --warning-color: #ff6f00;
+    --success-color: #43a047;
+    --white-color: #ffffff;
+}
+
+div > h1 {
+    font-size: 20px;
+    color: rgba(0, 0, 0, 0.87);
+    font-weight: 400 !important;
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    margin: 8px;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-link {
+    padding: 10px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.nav-link.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+
+/*
+navlink button
+ */
+.nav-link-btn {
+    background-color: var(--main-color);
+    color: white;
+    padding: 10px 20px;
+    margin: 2px;
+    border: none;
+    border-radius: 0px;
+    font-size: 16px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nav-link-btn:hover {
+    background-color: #005bb5;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link-btn:active {
+    background-color: #003f7f;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) inset;
+}
+
+.nav-link-btn:disabled {
+    background-color: #b0c4de;
+    cursor: not-allowed;
+}
+
+/* Button styles */
+button {
+    background-color: var(--main-color);
+    color: var(--white-color);
+    border: 1px solid #ccc;
+    border-radius: 0;
+    font-size: 14px;
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    height: 33px;
+    min-width: 85px;
+    padding: 6.4px 16px;
+    text-align: center;
+    text-transform: inherit;
+    letter-spacing: normal;
+    line-height: normal;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--hover-color);
+    color: var(--white-color);
+}
+
+button:disabled {
+    background-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.26);
+}
+
+/* Input styles */
+input {
+    background-color: #f6f6f6;
+    color: #7a7a7a;
+    border: 1px solid #d9d9d9;
+    height: 26px;
+    padding: 0 8px;
+    font-size: 13px;
+    border-radius: 0;
+}
+
+input:focus {
+    outline: none;
+}
+
+/* Dialog styles */
+.dialog {
+    box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.3);
+    border: 1px solid #ccc;
+    padding: 16px;
+    border-radius: 0;
+    font-family: 'Arial', 'Helvetica', sans-serif;
+}
+
+/* Typography variants */
+.typography-headerHidden {
+    font-size: 20px;
+    color: rgba(0, 0, 0, 0.87);
+    margin: 8px;
+}
+
+.typography-error {
+    color: #ff5a5a;
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Menu styles */
+.menu-item {
+    height: 25px;
+    font-size: 13px;
+    padding: 0 8px;
+    margin: 4px;
+    color: #7a7a7a;
+}
+
+.menu-item:hover {
+    background-color: var(--main-color);
+    color: var(--white-color);
+}
+
+/* Autocomplete styles */
+.autocomplete-root {
+    background-color: #f6f6f6;
+    border: 1px solid #d9d9d9;
+    padding-left: 0;
+    border-radius: 0;
+}
+
+.autocomplete-option {
+    font-size: 13px;
+    padding: 2px 8px;
+    color: #7a7a7a;
+}
+
+.autocomplete-option:hover {
+    background-color: var(--main-color);
+    color: var(--white-color);
+}
+
+/* Tooltip styles */
+.tooltip {
+    background-color: #333;
+    color: #d8d8d8;
+    font-size: 12px;
+    border-radius: 2px;
+    padding: 5px 9px;
+}
+
+/* Table styles */
+.table {
+    border: 1px solid #d9d9d9;
+}
+
+.table-cell {
+    color: #7a7a7a;
+    padding: 8px;
+    border-top: 1px solid rgba(224, 224, 224, 1);
+}
+
+/* Other component styles */
+.alert {
+    font-size: 14px;
+}
+
+.app-bar {
+    background-color: var(--main-color);
+    color: var(--white-color);
+    box-shadow: none;
+}

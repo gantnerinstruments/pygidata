@@ -1,0 +1,61 @@
+journal created on: 23.09.2025 13:50
+**********************
+1;Journal update;23.09.2025 13:50
+2;Minimum temperature;20.0; [°C]
+3;Maximum temperature;409.158203125; [°C]
+**********************
+1;Journal update;23.09.2025 13:50
+2;Minimum temperature;20.0; [°C]
+3;Maximum temperature;409.158203125; [°C]
+**********************
+1;Journal update;23.09.2025 13:54
+2;Minimum temperature;25.0; [°C]
+3;Maximum temperature;55.0; [°C]
+**********************
+1;Journal update;23.09.2025 13:55
+2;Minimum temperature;2.0; []
+3;Maximum temperature;2.0; []
+**********************
+1;Journal update;23.09.2025 13:57
+2;Minimum temperature;20.0; [°C]
+3;Maximum temperature;409.158203125; [°C]
+**********************
+1;Journal update;23.09.2025 13:58
+2;Minimum temperature;20.0; [°C]
+3;Maximum temperature;409.158203125; [°C]
+**********************
+1;Journal update;23.09.2025 14:02
+2;Minimum GeneratorOutput;20.0; [°C]
+3;Maximum GeneratorOutput;409.158203125; [°C]
+**********************
+1;Journal update;23.09.2025 14:02
+2;Minimum GeneratedSinus;25.0; [°C]
+3;Maximum GeneratedSinus;55.0; [°C]
+**********************
+1;Journal update;23.09.2025 14:03
+2;Minimum Test_Running;2.0; []
+3;Maximum Test_Running;2.0; []
+**********************
+1;Journal update;23.09.2025 14:03
+2;Minimum TotalTestNumber;1.0; []
+3;Maximum TotalTestNumber;1.0; []
+**********************
+1;Journal update;23.09.2025 14:03
+2;Minimum TestNumber;1.0; []
+3;Maximum TestNumber;1.0; []
+**********************
+1;Journal update;23.09.2025 14:03
+2;Minimum TC1;25.641231536865234; [°C]
+3;Maximum TC1;25.695438385009766; [°C]
+**********************
+1;Journal update;24.09.2025 14:27
+2;Minimum GeneratorOutput;20.0; [°C]
+3;Maximum GeneratorOutput;409.158203125; [°C]
+**********************
+1;Journal update;16.01.2026 14:49
+2;Minimum GeneratorOutput;20.0; [�C]
+3;Maximum GeneratorOutput;409.158203125; [�C]
+**********************
+1;Journal update;22.01.2026 10:07
+2;Minimum GeneratorOutput;20.0; [�C]
+3;Maximum GeneratorOutput;409.158203125; [�C]
