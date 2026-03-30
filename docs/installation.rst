@@ -23,13 +23,13 @@ Use this only for local/LAN Highspeedport workflows that require ``giutility.dll
 
 .. code-block:: bash
 
-    pip install "pygidata[expert-local]"
+    pip install "pygidata[ginsutility]"
 
 For editable development in this repository:
 
 .. code-block:: bash
 
-    pip install -e .[expert-local]
+    pip install -e .[ginsutility]
 
 .. warning::
 

@@ -34,7 +34,7 @@ dependencies = { file = ["requirements.txt"] }
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-xdist"]
-expert-local = [
+ginsutility = [
   "dash",
   "matplotlib",
   "numpy",

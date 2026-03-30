@@ -26,17 +26,17 @@ Use this only if you need local Highspeedport access.
 > **Required for `ginsutility` examples**
 >
 > All examples in `src/ginsutility/examples` require:
-> 1. `pygidata` installed with extras: `pip install "pygidata[expert-local]"`
+> 1. `pygidata` installed with extras: `pip install "pygidata[ginsutility]"`
 > 2. local access to `giutility.dll` (typically installed with GI.bench / Q.core tooling)
 
 ```bash
-pip install "pygidata[expert-local]"
+pip install "pygidata[ginsutility]"
 ```
 
 Editable install from this repository:
 
 ```bash
-pip install -e .[expert-local]
+pip install -e .[ginsutility]
 ```
 
 `ginsutility` requires access to `giutility.dll` (typically installed with GI.bench / Q.core tooling).
@@ -47,7 +47,7 @@ Quick check after installation:
 python -c "import ginsutility; print('ginsutility import OK')"
 ```
 
-If this import fails, run the examples only after fixing the expert-local installation and DLL availability.
+If this import fails, run the examples only after fixing the ginsutility installation and DLL availability.
 
 Import module in python script and call functions.
 

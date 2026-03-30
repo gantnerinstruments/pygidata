@@ -29,13 +29,13 @@ Install the optional expert dependencies:
 
 .. code-block:: bash
 
-    pip install "pygidata[expert-local]"
+    pip install "pygidata[ginsutility]"
 
 Or for editable install from this repository:
 
 .. code-block:: bash
 
-    pip install -e .[expert-local]
+    pip install -e .[ginsutility]
 
 DLL requirement
 ---------------
