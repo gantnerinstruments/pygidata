@@ -33,7 +33,7 @@ To manually install required packages, you can open a ``terminal`` to execute Li
     If you want to experiment with different packages and dependencies, it is recommended to create a virtual environment.
 
 Set up a virtual environment (venv) with pip:
-https://dev.gantner-instruments.com/webfiles/public/Download/Software/Python/ginsapy/doc/build/html/installation.html#set-up-a-virtual-environment
+See the local ``installation`` documentation page in this project.
 
 Or with conda:
 https://www.digitalocean.com/community/tutorials/how-to-install-anaconda-on-ubuntu-18-04-quickstart

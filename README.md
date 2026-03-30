@@ -1,16 +1,55 @@
 # pygidata
 
-# Usage
+This repository provides one Python package, `pygidata`, for Gantner Instruments data access.
 
-### Install from PyPi
+Inside `pygidata`, the `ginsutility` module is included for expert/local Highspeedport access via `GInsUtility.dll`.
+The logic remains separated by module scope (`gi_data` for API access, `ginsutility` for local DLL workflows).
+
+## Choose the right package
+
+- Use `pygidata`/`gi_data` for standard backend/API integrations and GI.cloud workflows.
+- Use `ginsutility` only for local expert scenarios that require the Highspeedport DLL.
+- Do not use `ginsutility` as GI.cloud-only integration path.
+
+## Usage
+
+### Install `pygidata` from PyPI
 
 ```bash 
 pip install pygidata
 ```
 
+### Install with local expert module dependencies
+
+Use this only if you need local Highspeedport access.
+
+> **Required for `ginsutility` examples**
+>
+> All examples in `src/ginsutility/examples` require:
+> 1. `pygidata` installed with extras: `pip install "pygidata[ginsutility]"`
+> 2. local access to `GInsUtility.dll` or on Linux `libGInsUtility.dll` (typically installed with GI.bench / Q.core).
+
+```bash
+pip install "pygidata[ginsutility]"
+```
+
+Editable install from this repository:
+
+```bash
+pip install -e .[ginsutility]
+```
+
+Quick check after installation:
+
+```bash
+python -c "import ginsutility; print('ginsutility import OK')"
+```
+
+If this import fails, run the examples only after fixing the ginsutility installation and DLL availability.
+
 Import module in python script and call functions.
 
-A detailed description of the package and other APIs can be found under [docs/](docs/Usage.ipynb) or in the
+A detailed description of `pygidata` can be found under [docs/](docs/Usage.ipynb) or in the
 Gantner Documentation.
 
 ```python
@@ -138,28 +177,43 @@ tox -e py310
 
 ## Documentation
 
-The documentation is being built as extern script in the GI.Sphinx repository.
+Build docs from repository root.
 
-The documentation consists of partially generated content. 
-To **generate .rst files** from the code package, run the following command from the root directory of the project:
+`nbsphinx` requires a local Pandoc installation.
 
-```bash
-sphinx-apidoc -o docs/source/ src
-```
-You need pandoc installed on the system itself first to build:
+### Install Pandoc
 
-```bash
-sudo apt install pandoc
+Windows (winget):
+
+```powershell
+winget install --id JohnMacFarlane.Pandoc -e
 ```
 
-Then, to **build the documentation**, run the following commands:
+Linux (Debian/Ubuntu):
 
 ```bash
-cd docs
 sudo apt update
-pip install -r requirements.txt
-make html
+sudo apt install -y pandoc
 ```
+
+### Windows (PowerShell)
+
+```powershell
+python -m pip install -r .\docs\requirements.txt
+Set-Location .\docs
+.\make.bat html
+```
+
+HTML output is written to `docs\_build\html`.
+
+### Linux/macOS
+
+```bash
+python -m pip install -r ./docs/requirements.txt
+make -C docs html
+```
+
+HTML output is written to `docs/_build/html`.
 
 ## Linting / Type hints
 

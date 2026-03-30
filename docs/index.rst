@@ -6,23 +6,24 @@
 Pygidata (python)
 ===================
 
-pygidata is a Python wrapper for the Gantner Instruments Data APIs.
+pygidata is a Python package providing interfaces to Gantner Instruments data
+APIs. It centralises the project's functionality under a single package
+namespace and includes two main subcomponents:
 
-It simplifies access to the measurements by providing an interface that encapsulates the underlying
-REST and GraphQL API's and its underlying mappings.
+- ``pygidata.gi_data``: the primary module for REST/GraphQL and cloud access.
+- ``pygidata.ginsutility``: an expert/local module that provides direct access to
+  Highspeedport hardware via a local DLL. This is intended for
+  advanced/local usage and requires additional, platform-specific setup.
 
-It provides tools for data acquisition, processing, storage, and remote management,
-enabling efficient integration with Gantner Instruments systems.
-
-To help you get started quickly, we recommend using the provided JupyterLab environment, which supports interactive development and testing.
-See the `Overview` section for setup instructions.
-
-The package section describes the modules and submodules of the pygidata package.
+To get started, follow the Installation section below. The documentation is
+ordered for clarity: Installation, pygidata (overview of the package),
+ginsutility (expert/local), and the JupyterLab usage notes.
 
 .. toctree::
    :maxdepth: 2
    :caption: Developer documentation
 
-   overview
    installation
+   local_expert_access
    Usage
+   overview
