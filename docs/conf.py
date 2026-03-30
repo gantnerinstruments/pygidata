@@ -1,6 +1,8 @@
+from datetime import datetime
+
 project = "Pygidata (python)"
 author = "Gantner Instruments"
-copyright = "2026, Gantner Instruments"
+copyright = f"{datetime.now().year}, {author}"
 
 extensions = [
     "nbsphinx",
