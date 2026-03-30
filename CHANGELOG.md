@@ -1,3 +1,13 @@
+## [0.5.0]
+
+### Added
+
+- The project "ginsapy" is now part of pygidata as the "ginsutility" module, providing local Highspeedport access via `giutility.dll`.
+
+### Changed
+
+- Docs updated
+
 ## [0.4.1]
 
 ### Added

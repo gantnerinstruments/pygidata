@@ -9,9 +9,9 @@ description = "Python package providing an interface to the Gantner Instruments 
 readme = "README.md"
 authors = [{ name = "Gantner Instruments GmbH" }]
 requires-python = ">=3.10,<3.13"
-keywords = ["python"]
+keywords = ["python", "ginsutility=1.18.0"]
 classifiers = [
-  "Development Status :: 1 - Planning",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
