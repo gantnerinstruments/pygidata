@@ -2,7 +2,7 @@
 
 This repository provides one Python package, `pygidata`, for Gantner Instruments data access.
 
-Inside `pygidata`, the `ginsutility` module is included for expert/local Highspeedport access via `giutility.dll`.
+Inside `pygidata`, the `ginsutility` module is included for expert/local Highspeedport access via `GInsUtility.dll`.
 The logic remains separated by module scope (`gi_data` for API access, `ginsutility` for local DLL workflows).
 
 ## Choose the right package
@@ -27,7 +27,7 @@ Use this only if you need local Highspeedport access.
 >
 > All examples in `src/ginsutility/examples` require:
 > 1. `pygidata` installed with extras: `pip install "pygidata[ginsutility]"`
-> 2. local access to `giutility.dll` (typically installed with GI.bench / Q.core tooling)
+> 2. local access to `GInsUtility.dll` or on Linux `libGInsUtility.dll` (typically installed with GI.bench / Q.core).
 
 ```bash
 pip install "pygidata[ginsutility]"
@@ -38,8 +38,6 @@ Editable install from this repository:
 ```bash
 pip install -e .[ginsutility]
 ```
-
-`ginsutility` requires access to `giutility.dll` (typically installed with GI.bench / Q.core tooling).
 
 Quick check after installation:
 
