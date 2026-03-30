@@ -27,7 +27,7 @@ Use this only if you need local Highspeedport access.
 >
 > All examples in `src/ginsutility/examples` require:
 > 1. `pygidata` installed with extras: `pip install "pygidata[ginsutility]"`
-> 2. local access to `GInsUtility.dll` or on Linux `libGInsUtility.dll` (typically installed with GI.bench / Q.core).
+> 2. local access to `GInsUtility.dll` or on Linux `libGInsUtility.so` (typically installed with GI.bench / Q.core).
 
 ```bash
 pip install "pygidata[ginsutility]"
