@@ -56,5 +56,16 @@ Use a quick import test after installation:
 
 Then run package-specific examples or tests from the ``ginsutility`` module.
 
+Examples
+--------
+
+The original practical example pages are available under the ginsutility
+documentation section:
+
+.. toctree::
+   :maxdepth: 2
+
+   ginsutility_examples/examples
+
 
 
