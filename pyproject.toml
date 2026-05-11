@@ -8,7 +8,7 @@ version = "0.5.0"
 description = "Python package providing an interface to the Gantner Instruments Data API"
 readme = "README.md"
 authors = [{ name = "Gantner Instruments GmbH" }]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.15"
 keywords = ["python", "ginsutility=1.18.0"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -16,6 +16,8 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Operating System :: Unix",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows"
@@ -46,7 +48,7 @@ ginsutility = [
 ]
 
 [tool.tox]
-env_list = ["py310", "py311", "py312"]
+env_list = ["py310", "py311", "py312", "py313", "py314"]
 
 [tool.tox.env_run_base]
 deps = [
