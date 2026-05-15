@@ -1,3 +1,13 @@
+## [0.5.1]
+
+### Added
+
+- Support for python 3.13 and 3.14
+
+### Changed
+
+- Adapted for new pypi publishing mechanism
+
 ## [0.5.0]
 
 ### Added
