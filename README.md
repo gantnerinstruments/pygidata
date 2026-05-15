@@ -50,7 +50,7 @@ If this import fails, run the examples only after fixing the ginsutility install
 Import module in python script and call functions.
 
 A detailed description of `pygidata` can be found
-under [docs](https://github.com/gantner-instruments/gimodules-python/blob/main/docs/Usage.ipynb) or in the
+under [docs](https://github.com/gantnerinstruments/pygidata/tree/main/docs) or in the
 Gantner Documentation.
 
 ```python
