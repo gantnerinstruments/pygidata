@@ -1,4 +1,3 @@
-from iniconfig import ParseError
 import sqlalchemy
 from sqlalchemy import exc
 import logging
@@ -11,6 +10,12 @@ from gimodules.cloudconnect.utils import (
     get_dates_from_string,
     replace_dates_in_string,
 )
+
+try:
+    from iniconfig import ParseError
+except ImportError:
+    class ParseError(ValueError):
+        pass
 
 pymysql.install_as_MySQLdb()
 
@@ -53,7 +58,7 @@ class MySQLConnect:
         trans = self.connection.begin()
 
         try:
-            res = self.connection.execute(query)
+            res = self.connection.execute(sqlalchemy.text(query))
 
             trans.commit()
             ref_data = res.fetchall()
