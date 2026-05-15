@@ -1,5 +1,15 @@
 # gimodules-python
 
+> [!WARNING]
+> **End of Life (EOL):** This package is deprecated and no longer actively developed.
+> Please migrate to **`pygidata`**, which is the maintained successor.
+
+## Deprecation Notice
+
+- `gimodules` is in maintenance-only / end-of-life state.
+- New features will be added to `pygidata` only.
+- For new projects, use `pygidata` directly.
+
 # Usage
 
 ### Install from PyPi

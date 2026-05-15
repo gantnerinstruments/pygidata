@@ -8,7 +8,10 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 VERSION = '0.3.0'
-DESCRIPTION = 'Python package providing an interface to the Gantner Instruments Cloud API'
+DESCRIPTION = (
+    'DEPRECATED (EOL): Use pygidata. '
+    'Python package providing an interface to the Gantner Instruments Cloud API'
+)
 
 # hotfix requirements to work for 3.10 - 3.14
 required = [

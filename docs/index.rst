@@ -6,6 +6,11 @@
 GI.modules (python)
 ===================
 
+.. warning::
+
+   **End of Life (EOL):** ``gimodules`` is deprecated and replaced by ``pygidata``.
+   Please use ``pygidata`` for all new development.
+
 GIModules is a Python wrapper for the Gantner Instruments Cloud and QCore APIs.
 
 It simplifies access to the measurements by providing an interface that encapsulates the underlying
