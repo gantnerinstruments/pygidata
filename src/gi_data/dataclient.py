@@ -341,7 +341,8 @@ class GIDataClient:
             *,
             format: DataFormat,
             target: str = "stream",
-            # "stream" | "record" - only stream on cloud: on cloud data is always persisted as "streams", there is no concept of "records"
+            # "stream" | "record" - only stream on cloud:
+            # on cloud data is always persisted as "streams", there is no concept of "records"
             csv_settings: Optional[CSVImportSettings] = None,
             add_time_series: bool = False,
             retention_time_sec: int = 0,
