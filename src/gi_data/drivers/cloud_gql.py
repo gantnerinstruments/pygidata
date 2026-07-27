@@ -182,6 +182,24 @@ class CloudGQLDriver(BaseDriver):
             for r in rows
         ]
 
+    async def get_measurements(self) -> List[GIHistoryMeasurement]:
+        raise NotImplementedError("get_measurements is not supported on cloud environments")
+
+    async def get_measurement(self, mid) -> GIHistoryMeasurement:
+        raise NotImplementedError("get_measurement is not supported on cloud environments")
+
+    async def get_measurements_advanced(self, **kwargs) -> List[GIHistoryMeasurement]:
+        raise NotImplementedError("get_measurements_advanced is not supported on cloud environments")
+
+    async def delete_measurement(self, mid) -> None:
+        raise NotImplementedError("delete_measurement is not supported on cloud environments")
+
+    async def add_measurement_metadata(self, mid, **kwargs) -> None:
+        raise NotImplementedError("add_measurement_metadata is not supported on cloud environments")
+
+    async def delete_measurement_metadata(self, mid) -> None:
+        raise NotImplementedError("delete_measurement_metadata is not supported on cloud environments")
+
     async def list_variables(self) -> list[GIOnlineVariable]:
         await self._bearer()
         res = await self.http.get("/online/structure/variables")

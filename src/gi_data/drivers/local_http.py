@@ -116,6 +116,71 @@ class HTTPTimeSeriesDriver(BaseDriver):
 
         return [GIHistoryMeasurement.model_validate(d) for d in res.json()["Data"]]
 
+    async def get_measurements(self) -> List[GIHistoryMeasurement]:
+        """read measurements across all sources."""
+        res = await self.http.get("/history/structure/measurements")
+        return [GIHistoryMeasurement.model_validate(d) for d in res.json().get("Data", [])]
+
+    async def get_measurement(self, mid: Union[str, UUID]) -> Optional[GIHistoryMeasurement]:
+        """ read a single measurement."""
+        res = await self.http.get(f"/history/structure/measurements/{mid}")
+        data = res.json().get("Data") or []
+        # Endpoint may return either a single object or a list with one element
+        if isinstance(data, list):
+            return GIHistoryMeasurement.model_validate(data[0]) if data else None
+        return GIHistoryMeasurement.model_validate(data)
+
+    async def get_measurements_advanced(
+            self,
+            *,
+            start: Optional[int] = None,
+            end: Optional[int] = None,
+            order: str = "DESC",
+            limit: Optional[int] = None,
+            measurements: Optional[Iterable[Union[str, UUID]]] = None,
+            add_var_mapping: bool = True,
+            add_meas_metadata: bool = False,
+            meas_metadata_filter: Optional[List[dict]] = None,
+    ) -> List[GIHistoryMeasurement]:
+        """filtered measurements across sources."""
+        payload: Dict = {"Order": order, "AddVarMapping": bool(add_var_mapping),
+                         "AddMeasMetaData": bool(add_meas_metadata)}
+        if start is not None:
+            payload["Start"] = int(start)
+        if end is not None:
+            payload["End"] = int(end)
+        if limit is not None:
+            payload["Limit"] = int(limit)
+        if measurements:
+            payload["Measurements"] = [str(m) for m in measurements]
+        if meas_metadata_filter:
+            payload["MeasMetaDataFilter"] = meas_metadata_filter
+
+        res = await self.http.post("/history/structure/measurements", json=payload)
+        return [GIHistoryMeasurement.model_validate(d) for d in res.json().get("Data", [])]
+
+    async def delete_measurement(self, mid: Union[str, UUID]) -> None:
+        await self.http.delete(f"/history/structure/measurements/{mid}")
+
+    async def add_measurement_metadata(
+            self,
+            mid: Union[str, UUID],
+            *,
+            meas_name: Optional[str] = None,
+            metadata: Optional[List[dict]] = None,
+    ) -> None:
+        payload: Dict = {}
+        if meas_name is not None:
+            payload["MeasName"] = meas_name
+        if metadata:
+            payload["MetaData"] = metadata
+        await self.http.post(
+            f"/history/structure/measurements/{mid}/metadata", json=payload
+        )
+
+    async def delete_measurement_metadata(self, mid: Union[str, UUID]) -> None:
+        await self.http.delete(f"/history/structure/measurements/{mid}/metadata")
+
     # -------- Data ---------------------------------------------------
     async def fetch_buffer(
             self,
