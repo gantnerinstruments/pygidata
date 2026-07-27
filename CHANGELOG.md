@@ -1,3 +1,13 @@
+## [0.5.2]
+
+### Fixed
+
+- Fixed docs link that was broken in pypi
+
+### Added
+
+- Fully added measurement API funcs
+
 ## [0.5.1]
 
 ### Added

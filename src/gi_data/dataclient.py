@@ -205,6 +205,56 @@ class GIDataClient:
         # Attach client to enable selected_meas.vars lazy variable resolution
         return [m.attach_client(self) for m in result]
 
+    def get_measurements(self) -> List[GIHistoryMeasurement]:
+        result = _run(self._drivers["history"].get_measurements())
+        return [m.attach_client(self) for m in result]
+
+    def get_measurement(self, measurement_id: Union[str, UUID]) -> Optional[GIHistoryMeasurement]:
+        m = _run(self._drivers["history"].get_measurement(measurement_id))
+        return m.attach_client(self) if m else None
+
+    def get_measurements_advanced(
+            self,
+            *,
+            start: Optional[int] = None,
+            end: Optional[int] = None,
+            order: str = "DESC",
+            limit: Optional[int] = None,
+            measurements: Optional[Iterable[Union[str, UUID]]] = None,
+            add_var_mapping: bool = True,
+            add_meas_metadata: bool = False,
+            meas_metadata_filter: Optional[List[dict]] = None,
+    ) -> List[GIHistoryMeasurement]:
+        result = _run(
+            self._drivers["history"].get_measurements_advanced(
+                start=start, end=end, order=order, limit=limit,
+                measurements=measurements,
+                add_var_mapping=add_var_mapping,
+                add_meas_metadata=add_meas_metadata,
+                meas_metadata_filter=meas_metadata_filter,
+            )
+        )
+        return [m.attach_client(self) for m in result]
+
+    def delete_measurement(self, measurement_id: Union[str, UUID]) -> None:
+        _run(self._drivers["history"].delete_measurement(measurement_id))
+
+    def add_measurement_metadata(
+            self,
+            measurement_id: Union[str, UUID],
+            *,
+            meas_name: Optional[str] = None,
+            metadata: Optional[List[dict]] = None,
+    ) -> None:
+        _run(
+            self._drivers["history"].add_measurement_metadata(
+                measurement_id, meas_name=meas_name, metadata=metadata
+            )
+        )
+
+    def delete_measurement_metadata(self, measurement_id: Union[str, UUID]) -> None:
+        _run(self._drivers["history"].delete_measurement_metadata(measurement_id))
+
     def fetch_history(
             self,
             selectors: List[VarSelector],
