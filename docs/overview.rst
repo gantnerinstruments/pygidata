@@ -32,8 +32,8 @@ To manually install required packages, you can open a ``terminal`` to execute Li
 
     If you want to experiment with different packages and dependencies, it is recommended to create a virtual environment.
 
-Set up a virtual environment (venv) with pip:
-See the local ``installation`` documentation page in this project.
+See :doc:`installation` for virtual environments and installing into the selected
+notebook kernel with ``%pip``.
 
 Or with conda:
 https://www.digitalocean.com/community/tutorials/how-to-install-anaconda-on-ubuntu-18-04-quickstart
@@ -42,8 +42,15 @@ https://www.digitalocean.com/community/tutorials/how-to-install-anaconda-on-ubun
 Running Python Notebooks
 ------------------------
 
-Most of the delivered Jupyter Notebook scripts can simply be executed sequentially.
-Once you've opened a ``.ipynb`` file, you can either run each cell using ``Shift + Enter``, or select **Run → Run All Cells** from the menu.
+Open :doc:`data_access` or :doc:`measurements`. Run **Setup**, then the section
+you need with ``Shift + Enter``; unrelated sections do not need to run first.
+Configure IDs using the discovery tables, and run **Close** when finished.
+After closing, re-run Setup before making more API calls.
+
+Optional examples are code cells with a ``run_... = False`` switch. Configure
+the inputs and set it to ``True`` to run that cell; reset it before Run All.
+Disabled cells print a skip message without sending requests or writing files.
+Sphinx and Dash show saved outputs; download the notebook to run it in JupyterLab.
 
 .. image:: ./_images/run_all.png
     :width: 350

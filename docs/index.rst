@@ -1,29 +1,29 @@
-.. GI-Jupyter documentation master file, created by
-   sphinx-quickstart on Wed Feb 10 16:55:10 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Pygidata (python)
+pygidata user guide
 ===================
 
-pygidata is a Python package providing interfaces to Gantner Instruments data
-APIs. It centralises the project's functionality under a single package
-namespace and includes two main subcomponents:
-
-- ``pygidata.gi_data``: the primary module for REST/GraphQL and cloud access.
-- ``pygidata.ginsutility``: an expert/local module that provides direct access to
-  Highspeedport hardware via a local DLL. This is intended for
-  advanced/local usage and requires additional, platform-specific setup.
-
-To get started, follow the Installation section below. The documentation is
-ordered for clarity: Installation, pygidata (overview of the package),
-ginsutility (expert/local), and the JupyterLab usage notes.
+Read Gantner Instruments data from GI.cloud, GI.bench, Q.core, or Q.station
+using Python. Install ``pygidata`` and import the API client from ``gi_data``.
+Choose :doc:`data_access` for buffer/online data and file exchange, or
+:doc:`measurements` for recorded measurements and metadata.
+Each notebook runs independently in JupyterLab; this website shows saved outputs.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Developer documentation
+   :caption: Getting started
 
    installation
-   local_expert_access
-   Usage
    overview
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Examples and API
+
+   data_access
+   measurements
+   api_reference
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Expert local access
+
+   local_expert_access
