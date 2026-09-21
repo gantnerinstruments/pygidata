@@ -50,7 +50,8 @@ These examples read environment variables, not `.env` files.
 | Access Highspeedport through a local DLL         | [Local expert access](docs/local_expert_access.rst)                       |
 
 Each notebook is standalone: run Setup, then the workflow you need.
-Imports, writes, and deletes are opt-in code blocks, not executable cells.
+Optional operations are executable cells with `run_... = False` switches.
+Configure the inputs and enable only the cell you need; reset its switch before Run All.
 
 ### Local Highspeedport access
 

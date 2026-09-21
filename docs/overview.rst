@@ -47,8 +47,9 @@ you need with ``Shift + Enter``; unrelated sections do not need to run first.
 Configure IDs using the discovery tables, and run **Close** when finished.
 After closing, re-run Setup before making more API calls.
 
-Markdown code blocks are opt-in recipes: copy one into a new code cell only
-when needed. Imports, writes, and deletes are not executable cells.
+Optional examples are code cells with a ``run_... = False`` switch. Configure
+the inputs and set it to ``True`` to run that cell; reset it before Run All.
+Disabled cells print a skip message without sending requests or writing files.
 Sphinx and Dash show saved outputs; download the notebook to run it in JupyterLab.
 
 .. image:: ./_images/run_all.png
