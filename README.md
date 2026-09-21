@@ -1,88 +1,70 @@
 # pygidata
 
-This repository provides one Python package, `pygidata`, for Gantner Instruments data access.
+`pygidata` provides Python access to Gantner Instruments data on GI.cloud,
+GI.bench, Q.core, and Q.station. Install **pygidata** and import **gi_data**
+for the REST/GraphQL client. Python 3.10-3.14 is supported.
 
-Inside `pygidata`, the `ginsutility` module is included for expert/local Highspeedport access via `GInsUtility.dll`.
-The logic remains separated by module scope (`gi_data` for API access, `ginsutility` for local DLL workflows).
-
-## Choose the right package
-
-- Use `pygidata`/`gi_data` for standard backend/API integrations and GI.cloud workflows.
-- Use `ginsutility` only for local expert scenarios that require the Highspeedport DLL.
-- Do not use `ginsutility` as GI.cloud-only integration path.
-
-## Usage
-
-### Install `pygidata` from PyPI
-
-```bash 
-pip install pygidata
-```
-
-### Install with local expert module dependencies
-
-Use this only if you need local Highspeedport access.
-
-> **Required for `ginsutility` examples**
->
-> All examples in `src/ginsutility/examples` require:
-> 1. `pygidata` installed with extras: `pip install "pygidata[ginsutility]"`
-> 2. local access to `GInsUtility.dll` or on Linux `libGInsUtility.so` (typically installed with GI.bench / Q.core).
+## Quick start
 
 ```bash
-pip install "pygidata[ginsutility]"
+python -m pip install pygidata
 ```
 
-Editable install from this repository:
+Set `GI_BASE_URL` and `GI_TOKEN` in your environment.
+[docs/.env.example](docs/.env.example) contains the base URL and credentials; see
+[Installation](docs/installation.rst) for opt-in loading.
 
-```bash
-pip install -e .[ginsutility]
-```
-
-Quick check after installation:
-
-```bash
-python -c "import ginsutility; print('ginsutility import OK')"
-```
-
-If this import fails, run the examples only after fixing the ginsutility installation and DLL availability.
-
-Import module in python script and call functions.
-
-A detailed description of `pygidata` can be found
-under [docs](https://github.com/gantnerinstruments/pygidata/tree/main/docs) or in the
-Gantner Documentation.
+List the available streams:
 
 ```python
-from gi_data.dataclient import GIDataClient
+import logging
 import os
 
-PROFILES = {
-    "qstation": {
-        "base": os.getenv("GI_QSTATION_BASE", "http://10.1.50.36:8090"),
-        "auth": {"username": os.getenv("GI_QSTATION_USER", "admin"),
-                 "password": os.getenv("GI_QSTATION_PASS", "admin")},
-    },
-    "cloud": {
-        "base": os.getenv("GI_CLOUD_BASE", "https://demo.gi-cloud.io"),
-        "auth": {"access_token": os.getenv("GI_CLOUD_TOKEN", "")},
-    },
-}
+from gi_data.dataclient import GIDataClient
 
-ACTIVE_PROFILE = os.getenv("GI_PROFILE", "qstation")
+base_url = os.environ["GI_BASE_URL"]
+GIDataClient.set_log_level(logging.WARNING)
 
-def get_client(profile: str = ACTIVE_PROFILE) -> GIDataClient:
-    cfg = PROFILES[profile]
-    if cfg["auth"].get("access_token"):
-        return GIDataClient(cfg["base"], access_token=cfg["auth"]["access_token"]) 
-    return GIDataClient(cfg["base"],
-                        username=cfg["auth"].get("username"),
-                        password=cfg["auth"].get("password"))
-
-client = get_client()
-
+with GIDataClient(
+        base_url,
+        access_token=os.environ["GI_TOKEN"],
+) as client:
+    for source in client.list_buffer_sources():
+        print(source.id, source.name)
 ```
 
+For username/password authentication, replace the client construction with
+`GIDataClient(base_url, username=os.environ["GI_USER"],
+password=os.environ["GI_PASSWORD"])` and unset `GI_TOKEN`. A local target URL
+may look like `http://your-controller:8090`; use HTTPS for remote connections.
+These examples read environment variables, not `.env` files.
+
+## User guide
+
+| I want to...                                     | Start here                                                                |
+|--------------------------------------------------|---------------------------------------------------------------------------|
+| Read buffer/online data, plot, or exchange files | [Data access](docs/data_access.ipynb)                                     |
+| Read recordings or manage measurement metadata   | [Measurements](docs/measurements.ipynb)                                   |
+| Look up return types and backend conventions     | [API notes](docs/api_reference.rst)                                       |
+| Set up Python or the notebook kernel             | [Installation](docs/installation.rst) and [JupyterLab](docs/overview.rst) |
+| Access Highspeedport through a local DLL         | [Local expert access](docs/local_expert_access.rst)                       |
+
+Each notebook is standalone: run Setup, then the workflow you need.
+Imports, writes, and deletes are opt-in code blocks, not executable cells.
+
+### Local Highspeedport access
+
+`ginsutility` is included for expert/local workflows, not as a GI.cloud-only
+integration path. The examples in `src/ginsutility/examples` require both the
+optional Python dependencies and `GInsUtility.dll` (Windows) or
+`libGInsUtility.so` (Linux), typically supplied with GI.bench / Q.core.
+
+```bash
+python -m pip install "pygidata[ginsutility]"
+```
+
+For an editable development installation, use
+`python -m pip install -e ".[ginsutility]"`.
 
 # Development
 
