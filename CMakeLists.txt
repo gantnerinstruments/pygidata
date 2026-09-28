@@ -10,8 +10,8 @@ cmake_minimum_required(VERSION 3.19)
 #-------------------------------------------------------------------------------
 project(pygidata LANGUAGES NONE)
 
-set(GINS_PYGIDATA_INSTALL_SUFFIX "${CMAKE_INSTALL_PREFIX}/examples/python/ginsutility"
-    CACHE PATH "Allow to change the default installation suffix.")
+set(GINS_PYGIDATA_INSTALL_SUFFIX "examples/python/ginsutility"
+       CACHE PATH "Allow to change the default installation suffix.")
 
 option(GINS_PYGIDATA_INSTALL_EXAMPLES "Enable to install the ginsutility examples" ON)
 
