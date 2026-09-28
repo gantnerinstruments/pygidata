@@ -1,3 +1,15 @@
+## [0.5.5]
+
+### Changed
+
+- adapted to new example installation dir on gibench
+
+## [0.5.4]
+
+### Changed
+
+- Improved and split docs for analytics examples and pygidata
+
 ## [0.5.3]
 
 ### Changed
