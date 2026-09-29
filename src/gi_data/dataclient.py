@@ -7,8 +7,6 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, Type, Iterable
 from uuid import UUID
 
-from requests_toolbelt.adapters import source
-
 import nest_asyncio
 import pandas as pd
 import atexit

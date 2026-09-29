@@ -1,5 +1,10 @@
 ## [0.5.5]
 
+### Added
+
+- `GIDataClient.real_last_ts(source_id)` returns the exact last timestamp of a GI.cloud stream (`GIStream.last_ts` is
+  only an estimate). Temporary workaround until the backend provides it.
+
 ### Changed
 
 - adapted to new example installation dir on gibench
