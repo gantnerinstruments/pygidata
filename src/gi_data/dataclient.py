@@ -7,6 +7,8 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, Type, Iterable
 from uuid import UUID
 
+from requests_toolbelt.adapters import source
+
 import nest_asyncio
 import pandas as pd
 import atexit
@@ -151,6 +153,17 @@ class GIDataClient:
 
     def list_buffer_variables(self, source_id: Union[UUID, int]) -> List[GIStreamVariable]:
         return _run(self._drivers["buffer"].list_buffer_variables(source_id))
+
+    def real_last_ts(self, source_id: Union[str, UUID, int]) -> Optional[int]:
+        """Exact end timestamp (epoch ms) of a cloud stream, unlike the estimated `GIStream.last_ts`.
+
+        Reads the latest packet from Kafka itself, so it is slower. Returns None for an
+        empty stream. Temporary workaround until the backend provides the end timestamp.
+        """
+        driver = self._drivers["buffer"]
+        if not isinstance(driver, CloudGQLDriver):
+            raise NotImplementedError("real_last_ts is only available on cloud")
+        return _run(driver.real_last_ts(source_id))
 
     def fetch_buffer(
             self,

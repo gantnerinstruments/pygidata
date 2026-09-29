@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Sequence, Union, Optional, Literal, Iterable
 from uuid import UUID
 
+import httpx
 import pandas as pd
 
 from gi_data.mapping.enums import Resolution, DataType
@@ -128,6 +129,34 @@ class CloudGQLDriver(BaseDriver):
             out.append(self._vm_cache[s][k])
         return out
 
+    # --- exact end timestamp (temporary workaround) --------------------
+
+    async def real_last_ts(self, source_id: Union[str, UUID, int]) -> Optional[int]:
+        """Exact epoch-ms of the last packet of a stream, or None if it has no data.
+
+        Temporary workaround: picks the source's Kafka topic with the highest
+        partition suffix and reads its last packet via the raw-packets RPC.
+        """
+        sid = str(source_id)
+        url = "/rpc/DataAPI.GetRawDataPackets"
+        await self._bearer()
+        body = (await self.http.post(f"{url}?params")).json()  # parameter template incl. topic list
+        candidates = {}
+        for topic in body["DataTopic"]["List"]:
+            head, _, suffix = topic.rpartition("_")
+            if head.endswith(f"_{sid}") and suffix.isdigit():
+                candidates[topic] = int(suffix)
+        if not candidates:
+            raise KeyError(f"no kafka topic found for source {sid}")
+        body["DataTopic"]["Value"] = max(candidates, key=candidates.get)
+        body.update(StartEpochTimeMs=-1, EndEpochTimeMs=0, PacketCount=1)
+        try:
+            packets = (await self.http.post(url, json=body)).json().get("Packets") or []
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 406 and "has no data" in e.response.text:
+                return None
+            raise
+        return int(packets[-1]["TsEpochMs"]) if packets else None
     # --- structure -----------------------------------------------------
 
     async def list_buffer_sources(self) -> List[GIStream]:
